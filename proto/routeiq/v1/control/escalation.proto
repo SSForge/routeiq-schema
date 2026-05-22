@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package routeiq.v1.control;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/control;controlv1";
+option java_outer_classname = "EscalationProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.control";
+
+service EscalationService {
+  rpc Escalate(EscalateRequest) returns (EscalateResponse);
+  rpc ResolveEscalation(ResolveEscalationRequest) returns (ResolveEscalationResponse);
+}
+
+message EscalateRequest {
+  string session_id = 1;
+  string reason = 2;
+  string context_summary = 3;
+  EscalationUrgency urgency = 4;
+}
+
+message EscalateResponse {
+  string escalation_id = 1;
+  EscalationState state = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message ResolveEscalationRequest {
+  string escalation_id = 1;
+  string resolution = 2;
+  bool approved = 3;
+}
+
+message ResolveEscalationResponse {
+  bool accepted = 1;
+}
+
+enum EscalationUrgency {
+  ESCALATION_URGENCY_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}
+
+enum EscalationState {
+  ESCALATION_STATE_UNSPECIFIED = 0;
+  OPEN = 1;
+  ACKNOWLEDGED = 2;
+  RESOLVED = 3;
+  TIMED_OUT = 4;
+}

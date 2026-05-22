@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package routeiq.v1.control;
+
+import "google/protobuf/timestamp.proto";
+import "routeiq/v1/telemetry/entities.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/control;controlv1";
+option java_outer_classname = "SessionProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.control";
+
+service SessionService {
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+  rpc EndSession(EndSessionRequest) returns (EndSessionResponse);
+  rpc UpdateState(UpdateStateRequest) returns (UpdateStateResponse);
+}
+
+message StartSessionRequest {
+  string task_id = 1;
+  string agent_id = 2;
+  string tenant_id = 3;
+  string environment = 4;
+  routeiq.v1.telemetry.AutonomyMode autonomy_mode = 5;
+  routeiq.v1.telemetry.RiskTier risk_tier = 6;
+}
+
+message StartSessionResponse {
+  string session_id = 1;
+  google.protobuf.Timestamp started_at = 2;
+}
+
+message EndSessionRequest {
+  string session_id = 1;
+  routeiq.v1.telemetry.CompletionStatus completion_status = 2;
+}
+
+message EndSessionResponse {
+  bool accepted = 1;
+}
+
+message UpdateStateRequest {
+  string session_id = 1;
+  string state_key = 2;
+  bytes state_value = 3;
+}
+
+message UpdateStateResponse {
+  bool accepted = 1;
+  string state_version = 2;
+}

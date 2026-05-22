@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package routeiq.v1.control;
+
+import "google/protobuf/timestamp.proto";
+import "routeiq/v1/telemetry/entities.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/control;controlv1";
+option java_outer_classname = "InterventionProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.control";
+
+service InterventionService {
+  rpc TriggerIntervention(TriggerInterventionRequest) returns (TriggerInterventionResponse);
+  rpc GetInterventionStatus(GetInterventionStatusRequest) returns (GetInterventionStatusResponse);
+}
+
+message TriggerInterventionRequest {
+  string session_id = 1;
+  InterventionKind kind = 2;
+  string reason = 3;
+  routeiq.v1.telemetry.AutonomyMode downgrade_to = 4;
+}
+
+message TriggerInterventionResponse {
+  string intervention_id = 1;
+  bool applied = 2;
+  google.protobuf.Timestamp applied_at = 3;
+}
+
+message GetInterventionStatusRequest {
+  string intervention_id = 1;
+}
+
+message GetInterventionStatusResponse {
+  string intervention_id = 1;
+  InterventionKind kind = 2;
+  bool active = 3;
+}
+
+enum InterventionKind {
+  INTERVENTION_KIND_UNSPECIFIED = 0;
+  CIRCUIT_BREAK = 1;
+  ROLLBACK = 2;
+  AUTONOMY_DOWNGRADE = 3;
+  MODEL_SWAP = 4;
+  HARD_STOP = 5;
+}
