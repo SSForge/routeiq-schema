@@ -2032,6 +2032,18 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
     build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry.EntitiesProto.RiskTier getRiskTier();
 
     /**
+     * <code>string session_id = 17 [json_name = "sessionId"];</code>
+     * @return The sessionId.
+     */
+    java.lang.String getSessionId();
+    /**
+     * <code>string session_id = 17 [json_name = "sessionId"];</code>
+     * @return The bytes for sessionId.
+     */
+    com.google.protobuf.ByteString
+        getSessionIdBytes();
+
+    /**
      * <code>.routeiq.v1.telemetry.TaskEvent task = 100 [json_name = "task"];</code>
      * @return Whether the task field is set.
      */
@@ -2239,6 +2251,7 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       workflowId_ = "";
       autonomyMode_ = 0;
       riskTier_ = 0;
+      sessionId_ = "";
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor
@@ -2771,6 +2784,45 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       return result == null ? build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry.EntitiesProto.RiskTier.UNRECOGNIZED : result;
     }
 
+    public static final int SESSION_ID_FIELD_NUMBER = 17;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object sessionId_ = "";
+    /**
+     * <code>string session_id = 17 [json_name = "sessionId"];</code>
+     * @return The sessionId.
+     */
+    @java.lang.Override
+    public java.lang.String getSessionId() {
+      java.lang.Object ref = sessionId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        sessionId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string session_id = 17 [json_name = "sessionId"];</code>
+     * @return The bytes for sessionId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getSessionIdBytes() {
+      java.lang.Object ref = sessionId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        sessionId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     public static final int TASK_FIELD_NUMBER = 100;
     /**
      * <code>.routeiq.v1.telemetry.TaskEvent task = 100 [json_name = "task"];</code>
@@ -3174,6 +3226,9 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       if (riskTier_ != build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry.EntitiesProto.RiskTier.RISK_TIER_UNSPECIFIED.getNumber()) {
         output.writeEnum(16, riskTier_);
       }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(sessionId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 17, sessionId_);
+      }
       if (payloadCase_ == 100) {
         output.writeMessage(100, (build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry.EventsProto.TaskEvent) payload_);
       }
@@ -3266,6 +3321,9 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       if (riskTier_ != build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry.EntitiesProto.RiskTier.RISK_TIER_UNSPECIFIED.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(16, riskTier_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(sessionId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(17, sessionId_);
       }
       if (payloadCase_ == 100) {
         size += com.google.protobuf.CodedOutputStream
@@ -3370,6 +3428,8 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       }
       if (autonomyMode_ != other.autonomyMode_) return false;
       if (riskTier_ != other.riskTier_) return false;
+      if (!getSessionId()
+          .equals(other.getSessionId())) return false;
       if (!getPayloadCase().equals(other.getPayloadCase())) return false;
       switch (payloadCase_) {
         case 100:
@@ -3466,6 +3526,8 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       hash = (53 * hash) + autonomyMode_;
       hash = (37 * hash) + RISK_TIER_FIELD_NUMBER;
       hash = (53 * hash) + riskTier_;
+      hash = (37 * hash) + SESSION_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getSessionId().hashCode();
       switch (payloadCase_) {
         case 100:
           hash = (37 * hash) + TASK_FIELD_NUMBER;
@@ -3681,6 +3743,7 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
         }
         autonomyMode_ = 0;
         riskTier_ = 0;
+        sessionId_ = "";
         if (taskBuilder_ != null) {
           taskBuilder_.clear();
         }
@@ -3804,6 +3867,9 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
         }
         if (((from_bitField0_ & 0x00008000) != 0)) {
           result.riskTier_ = riskTier_;
+        }
+        if (((from_bitField0_ & 0x00010000) != 0)) {
+          result.sessionId_ = sessionId_;
         }
         result.bitField0_ |= to_bitField0_;
       }
@@ -3932,6 +3998,11 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
         }
         if (other.riskTier_ != 0) {
           setRiskTierValue(other.getRiskTierValue());
+        }
+        if (!other.getSessionId().isEmpty()) {
+          sessionId_ = other.sessionId_;
+          bitField0_ |= 0x00010000;
+          onChanged();
         }
         switch (other.getPayloadCase()) {
           case TASK: {
@@ -4092,6 +4163,11 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
                 bitField0_ |= 0x00008000;
                 break;
               } // case 128
+              case 138: {
+                sessionId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00010000;
+                break;
+              } // case 138
               case 802: {
                 input.readMessage(
                     internalGetTaskFieldBuilder().getBuilder(),
@@ -5267,6 +5343,78 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       public Builder clearRiskTier() {
         bitField0_ = (bitField0_ & ~0x00008000);
         riskTier_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object sessionId_ = "";
+      /**
+       * <code>string session_id = 17 [json_name = "sessionId"];</code>
+       * @return The sessionId.
+       */
+      public java.lang.String getSessionId() {
+        java.lang.Object ref = sessionId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          sessionId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string session_id = 17 [json_name = "sessionId"];</code>
+       * @return The bytes for sessionId.
+       */
+      public com.google.protobuf.ByteString
+          getSessionIdBytes() {
+        java.lang.Object ref = sessionId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          sessionId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string session_id = 17 [json_name = "sessionId"];</code>
+       * @param value The sessionId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSessionId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        sessionId_ = value;
+        bitField0_ |= 0x00010000;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string session_id = 17 [json_name = "sessionId"];</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearSessionId() {
+        sessionId_ = getDefaultInstance().getSessionId();
+        bitField0_ = (bitField0_ & ~0x00010000);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string session_id = 17 [json_name = "sessionId"];</code>
+       * @param value The bytes for sessionId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSessionIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        sessionId_ = value;
+        bitField0_ |= 0x00010000;
         onChanged();
         return this;
       }
@@ -20105,7 +20253,7 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       "oolchainVersion\022%\n\016memory_version\030\006 \001(\tR" +
       "\rmemoryVersion\022+\n\021retrieval_version\030\007 \001(" +
       "\tR\020retrievalVersion\0222\n\025policy_bundle_ver" +
-      "sion\030\010 \001(\tR\023policyBundleVersion\"\360\n\n\nAgen" +
+      "sion\030\010 \001(\tR\023policyBundleVersion\"\217\013\n\nAgen" +
       "tEvent\022\031\n\010trace_id\030\001 \001(\014R\007traceId\022\027\n\007spa" +
       "n_id\030\002 \001(\014R\006spanId\022$\n\016parent_span_id\030\003 \001" +
       "(\014R\014parentSpanId\0228\n\ttimestamp\030\004 \001(\0132\032.go" +
@@ -20122,112 +20270,113 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
       "omy_mode\030\017 \001(\0162\".routeiq.v1.telemetry.Au" +
       "tonomyModeR\014autonomyMode\022;\n\trisk_tier\030\020 " +
       "\001(\0162\036.routeiq.v1.telemetry.RiskTierR\010ris" +
-      "kTier\0225\n\004task\030d \001(\0132\037.routeiq.v1.telemet" +
-      "ry.TaskEventH\000R\004task\0225\n\004step\030e \001(\0132\037.rou" +
-      "teiq.v1.telemetry.StepEventH\000R\004step\022A\n\010d" +
-      "ecision\030f \001(\0132#.routeiq.v1.telemetry.Dec" +
-      "isionEventH\000R\010decision\022B\n\ttool_call\030g \001(" +
-      "\0132#.routeiq.v1.telemetry.ToolCallEventH\000" +
-      "R\010toolCall\022D\n\tretrieval\030h \001(\0132$.routeiq." +
-      "v1.telemetry.RetrievalEventH\000R\tretrieval" +
-      "\022;\n\006memory\030i \001(\0132!.routeiq.v1.telemetry." +
-      "MemoryEventH\000R\006memory\022>\n\007handoff\030j \001(\0132\"" +
-      ".routeiq.v1.telemetry.HandoffEventH\000R\007ha" +
-      "ndoff\022;\n\006policy\030k \001(\0132!.routeiq.v1.telem" +
-      "etry.PolicyEventH\000R\006policy\022M\n\014interventi" +
-      "on\030l \001(\0132\'.routeiq.v1.telemetry.Interven" +
-      "tionEventH\000R\014intervention\022A\n\010recovery\030m " +
-      "\001(\0132#.routeiq.v1.telemetry.RecoveryEvent" +
-      "H\000R\010recovery\022Q\n\016state_snapshot\030n \001(\0132(.r" +
-      "outeiq.v1.telemetry.StateSnapshotEventH\000" +
-      "R\rstateSnapshotB\t\n\007payload\"\204\004\n\tTaskEvent" +
-      "\022!\n\014input_intent\030\001 \001(\tR\013inputIntent\0220\n\024n" +
-      "ormalized_task_type\030\002 \001(\tR\022normalizedTas" +
-      "kType\022)\n\020expected_outcome\030\003 \001(\tR\017expecte" +
-      "dOutcome\022%\n\016actual_outcome\030\004 \001(\tR\ractual" +
-      "Outcome\022S\n\021completion_status\030\005 \001(\0162&.rou" +
-      "teiq.v1.telemetry.CompletionStatusR\020comp" +
-      "letionStatus\022P\n\020failure_category\030\006 \001(\0162%" +
-      ".routeiq.v1.telemetry.FailureCategoryR\017f" +
-      "ailureCategory\022$\n\016total_cost_usd\030\007 \001(\001R\014" +
-      "totalCostUsd\022!\n\014total_tokens\030\010 \001(\003R\013tota" +
-      "lTokens\022\'\n\017human_escalated\030\t \001(\010R\016humanE" +
-      "scalated\022\037\n\013rolled_back\030\n \001(\010R\nrolledBac" +
-      "k\022\026\n\006cohort\030\013 \001(\tR\006cohort\"\313\004\n\rToolCallEv" +
-      "ent\022\033\n\ttool_name\030\001 \001(\tR\010toolName\022!\n\014tool" +
-      "_version\030\002 \001(\tR\013toolVersion\022%\n\016arguments" +
-      "_hash\030\003 \001(\tR\rargumentsHash\022+\n\021arguments_" +
-      "summary\030\004 \001(\tR\020argumentsSummary\022P\n\020permi" +
-      "ssion_level\030\005 \001(\0162%.routeiq.v1.telemetry" +
-      ".PermissionLevelR\017permissionLevel\0229\n\nsta" +
-      "rt_time\030\006 \001(\0132\032.google.protobuf.Timestam" +
-      "pR\tstartTime\0225\n\010end_time\030\007 \001(\0132\032.google." +
-      "protobuf.TimestampR\007endTime\022\035\n\nlatency_m" +
-      "s\030\010 \001(\001R\tlatencyMs\022K\n\rresult_status\030\t \001(" +
-      "\0162&.routeiq.v1.telemetry.ToolResultStatu" +
-      "sR\014resultStatus\022\035\n\nerror_code\030\n \001(\tR\terr" +
-      "orCode\022%\n\016result_summary\030\013 \001(\tR\rresultSu" +
-      "mmary\0220\n\024result_quality_flags\030\014 \003(\tR\022res" +
-      "ultQualityFlags\"\306\002\n\tStepEvent\022\'\n\017selecte" +
-      "d_action\030\001 \001(\tR\016selectedAction\022)\n\020action" +
-      "_rationale\030\002 \001(\tR\017actionRationale\022S\n\021com" +
-      "pletion_status\030\003 \001(\0162&.routeiq.v1.teleme" +
-      "try.CompletionStatusR\020completionStatus\022P" +
-      "\n\020failure_category\030\004 \001(\0162%.routeiq.v1.te" +
-      "lemetry.FailureCategoryR\017failureCategory" +
-      "\022\035\n\nstep_index\030\005 \001(\005R\tstepIndex\022\037\n\013retry" +
-      "_count\030\006 \001(\005R\nretryCount\"\306\001\n\rDecisionEve" +
-      "nt\022#\n\rdecision_type\030\001 \001(\tR\014decisionType\022" +
-      "-\n\022options_considered\030\002 \001(\tR\021optionsCons" +
-      "idered\022#\n\rchosen_option\030\003 \001(\tR\014chosenOpt" +
-      "ion\022\034\n\trationale\030\004 \001(\tR\trationale\022\036\n\ncon" +
-      "fidence\030\005 \001(\001R\nconfidence\"\332\001\n\016RetrievalE" +
-      "vent\022%\n\016retrieval_type\030\001 \001(\tR\rretrievalT" +
-      "ype\022#\n\rquery_summary\030\002 \001(\tR\014querySummary" +
-      "\022#\n\rresults_count\030\003 \001(\005R\014resultsCount\022\033\n" +
-      "\ttop_score\030\004 \001(\001R\010topScore\022\033\n\tcache_hit\030" +
-      "\005 \001(\010R\010cacheHit\022\035\n\nlatency_ms\030\006 \001(\001R\tlat" +
-      "encyMs\"\230\001\n\013MemoryEvent\022\037\n\013memory_type\030\001 " +
-      "\001(\tR\nmemoryType\022\034\n\toperation\030\002 \001(\tR\toper" +
-      "ation\022\037\n\013key_summary\030\003 \001(\tR\nkeySummary\022)" +
-      "\n\020entries_affected\030\004 \001(\005R\017entriesAffecte" +
-      "d\"\342\001\n\014HandoffEvent\022\"\n\rfrom_agent_id\030\001 \001(" +
-      "\tR\013fromAgentId\022\036\n\013to_agent_id\030\002 \001(\tR\ttoA" +
-      "gentId\022%\n\016handoff_reason\030\003 \001(\tR\rhandoffR" +
-      "eason\022>\n\006status\030\004 \001(\0162&.routeiq.v1.telem" +
-      "etry.CompletionStatusR\006status\022\'\n\017context" +
-      "_summary\030\005 \001(\tR\016contextSummary\"\277\001\n\013Polic" +
-      "yEvent\022\033\n\tpolicy_id\030\001 \001(\tR\010policyId\022%\n\016b" +
-      "undle_version\030\002 \001(\tR\rbundleVersion\022)\n\020ac" +
-      "tion_evaluated\030\003 \001(\tR\017actionEvaluated\022\030\n" +
-      "\007verdict\030\004 \001(\tR\007verdict\022\'\n\017rules_trigger" +
-      "ed\030\005 \003(\tR\016rulesTriggered\"\261\001\n\021Interventio" +
-      "nEvent\022+\n\021intervention_type\030\001 \001(\tR\020inter" +
-      "ventionType\022%\n\016trigger_reason\030\002 \001(\tR\rtri" +
-      "ggerReason\022*\n\021trigger_metric_id\030\003 \001(\tR\017t" +
-      "riggerMetricId\022\034\n\tautomated\030\004 \001(\010R\tautom" +
-      "ated\"\230\001\n\rRecoveryEvent\022#\n\rrecovery_type\030" +
-      "\001 \001(\tR\014recoveryType\022\035\n\nfrom_error\030\002 \001(\tR" +
-      "\tfromError\022\034\n\tsucceeded\030\003 \001(\010R\tsucceeded" +
-      "\022%\n\016attempt_number\030\004 \001(\005R\rattemptNumber\"" +
-      "\204\001\n\022StateSnapshotEvent\022#\n\rsnapshot_type\030" +
-      "\001 \001(\tR\014snapshotType\022(\n\020state_size_bytes\030" +
-      "\002 \001(\003R\016stateSizeBytes\022\037\n\013snapshot_id\030\003 \001" +
-      "(\tR\nsnapshotId*\215\003\n\tEventType\022\032\n\026EVENT_TY" +
-      "PE_UNSPECIFIED\020\000\022\020\n\014TASK_STARTED\020\001\022\022\n\016TA" +
-      "SK_COMPLETED\020\002\022\017\n\013TASK_FAILED\020\003\022\020\n\014STEP_" +
-      "STARTED\020\004\022\022\n\016STEP_COMPLETED\020\005\022\021\n\rDECISIO" +
-      "N_MADE\020\006\022\017\n\013TOOL_CALLED\020\007\022\021\n\rTOOL_RETURN" +
-      "ED\020\010\022\027\n\023RETRIEVAL_PERFORMED\020\t\022\017\n\013MEMORY_" +
-      "READ\020\n\022\022\n\016MEMORY_WRITTEN\020\013\022\025\n\021HANDOFF_IN" +
-      "ITIATED\020\014\022\024\n\020HANDOFF_ACCEPTED\020\r\022\024\n\020POLIC" +
-      "Y_EVALUATED\020\016\022\032\n\026INTERVENTION_TRIGGERED\020" +
-      "\017\022\026\n\022RECOVERY_ATTEMPTED\020\020\022\033\n\027STATE_SNAPS" +
-      "HOT_CAPTURED\020\021B\227\001\n2build.buf.gen.ssforge" +
-      ".routeiq.routeiq.v1.telemetryB\013EventsPro" +
-      "toZTbuf.build/gen/go/ssforge/routeiq/pro" +
-      "tocolbuffers/go/routeiq/v1/telemetry;tel" +
-      "emetryv1b\006proto3"
+      "kTier\022\035\n\nsession_id\030\021 \001(\tR\tsessionId\0225\n\004" +
+      "task\030d \001(\0132\037.routeiq.v1.telemetry.TaskEv" +
+      "entH\000R\004task\0225\n\004step\030e \001(\0132\037.routeiq.v1.t" +
+      "elemetry.StepEventH\000R\004step\022A\n\010decision\030f" +
+      " \001(\0132#.routeiq.v1.telemetry.DecisionEven" +
+      "tH\000R\010decision\022B\n\ttool_call\030g \001(\0132#.route" +
+      "iq.v1.telemetry.ToolCallEventH\000R\010toolCal" +
+      "l\022D\n\tretrieval\030h \001(\0132$.routeiq.v1.teleme" +
+      "try.RetrievalEventH\000R\tretrieval\022;\n\006memor" +
+      "y\030i \001(\0132!.routeiq.v1.telemetry.MemoryEve" +
+      "ntH\000R\006memory\022>\n\007handoff\030j \001(\0132\".routeiq." +
+      "v1.telemetry.HandoffEventH\000R\007handoff\022;\n\006" +
+      "policy\030k \001(\0132!.routeiq.v1.telemetry.Poli" +
+      "cyEventH\000R\006policy\022M\n\014intervention\030l \001(\0132" +
+      "\'.routeiq.v1.telemetry.InterventionEvent" +
+      "H\000R\014intervention\022A\n\010recovery\030m \001(\0132#.rou" +
+      "teiq.v1.telemetry.RecoveryEventH\000R\010recov" +
+      "ery\022Q\n\016state_snapshot\030n \001(\0132(.routeiq.v1" +
+      ".telemetry.StateSnapshotEventH\000R\rstateSn" +
+      "apshotB\t\n\007payload\"\204\004\n\tTaskEvent\022!\n\014input" +
+      "_intent\030\001 \001(\tR\013inputIntent\0220\n\024normalized" +
+      "_task_type\030\002 \001(\tR\022normalizedTaskType\022)\n\020" +
+      "expected_outcome\030\003 \001(\tR\017expectedOutcome\022" +
+      "%\n\016actual_outcome\030\004 \001(\tR\ractualOutcome\022S" +
+      "\n\021completion_status\030\005 \001(\0162&.routeiq.v1.t" +
+      "elemetry.CompletionStatusR\020completionSta" +
+      "tus\022P\n\020failure_category\030\006 \001(\0162%.routeiq." +
+      "v1.telemetry.FailureCategoryR\017failureCat" +
+      "egory\022$\n\016total_cost_usd\030\007 \001(\001R\014totalCost" +
+      "Usd\022!\n\014total_tokens\030\010 \001(\003R\013totalTokens\022\'" +
+      "\n\017human_escalated\030\t \001(\010R\016humanEscalated\022" +
+      "\037\n\013rolled_back\030\n \001(\010R\nrolledBack\022\026\n\006coho" +
+      "rt\030\013 \001(\tR\006cohort\"\313\004\n\rToolCallEvent\022\033\n\tto" +
+      "ol_name\030\001 \001(\tR\010toolName\022!\n\014tool_version\030" +
+      "\002 \001(\tR\013toolVersion\022%\n\016arguments_hash\030\003 \001" +
+      "(\tR\rargumentsHash\022+\n\021arguments_summary\030\004" +
+      " \001(\tR\020argumentsSummary\022P\n\020permission_lev" +
+      "el\030\005 \001(\0162%.routeiq.v1.telemetry.Permissi" +
+      "onLevelR\017permissionLevel\0229\n\nstart_time\030\006" +
+      " \001(\0132\032.google.protobuf.TimestampR\tstartT" +
+      "ime\0225\n\010end_time\030\007 \001(\0132\032.google.protobuf." +
+      "TimestampR\007endTime\022\035\n\nlatency_ms\030\010 \001(\001R\t" +
+      "latencyMs\022K\n\rresult_status\030\t \001(\0162&.route" +
+      "iq.v1.telemetry.ToolResultStatusR\014result" +
+      "Status\022\035\n\nerror_code\030\n \001(\tR\terrorCode\022%\n" +
+      "\016result_summary\030\013 \001(\tR\rresultSummary\0220\n\024" +
+      "result_quality_flags\030\014 \003(\tR\022resultQualit" +
+      "yFlags\"\306\002\n\tStepEvent\022\'\n\017selected_action\030" +
+      "\001 \001(\tR\016selectedAction\022)\n\020action_rational" +
+      "e\030\002 \001(\tR\017actionRationale\022S\n\021completion_s" +
+      "tatus\030\003 \001(\0162&.routeiq.v1.telemetry.Compl" +
+      "etionStatusR\020completionStatus\022P\n\020failure" +
+      "_category\030\004 \001(\0162%.routeiq.v1.telemetry.F" +
+      "ailureCategoryR\017failureCategory\022\035\n\nstep_" +
+      "index\030\005 \001(\005R\tstepIndex\022\037\n\013retry_count\030\006 " +
+      "\001(\005R\nretryCount\"\306\001\n\rDecisionEvent\022#\n\rdec" +
+      "ision_type\030\001 \001(\tR\014decisionType\022-\n\022option" +
+      "s_considered\030\002 \001(\tR\021optionsConsidered\022#\n" +
+      "\rchosen_option\030\003 \001(\tR\014chosenOption\022\034\n\tra" +
+      "tionale\030\004 \001(\tR\trationale\022\036\n\nconfidence\030\005" +
+      " \001(\001R\nconfidence\"\332\001\n\016RetrievalEvent\022%\n\016r" +
+      "etrieval_type\030\001 \001(\tR\rretrievalType\022#\n\rqu" +
+      "ery_summary\030\002 \001(\tR\014querySummary\022#\n\rresul" +
+      "ts_count\030\003 \001(\005R\014resultsCount\022\033\n\ttop_scor" +
+      "e\030\004 \001(\001R\010topScore\022\033\n\tcache_hit\030\005 \001(\010R\010ca" +
+      "cheHit\022\035\n\nlatency_ms\030\006 \001(\001R\tlatencyMs\"\230\001" +
+      "\n\013MemoryEvent\022\037\n\013memory_type\030\001 \001(\tR\nmemo" +
+      "ryType\022\034\n\toperation\030\002 \001(\tR\toperation\022\037\n\013" +
+      "key_summary\030\003 \001(\tR\nkeySummary\022)\n\020entries" +
+      "_affected\030\004 \001(\005R\017entriesAffected\"\342\001\n\014Han" +
+      "doffEvent\022\"\n\rfrom_agent_id\030\001 \001(\tR\013fromAg" +
+      "entId\022\036\n\013to_agent_id\030\002 \001(\tR\ttoAgentId\022%\n" +
+      "\016handoff_reason\030\003 \001(\tR\rhandoffReason\022>\n\006" +
+      "status\030\004 \001(\0162&.routeiq.v1.telemetry.Comp" +
+      "letionStatusR\006status\022\'\n\017context_summary\030" +
+      "\005 \001(\tR\016contextSummary\"\277\001\n\013PolicyEvent\022\033\n" +
+      "\tpolicy_id\030\001 \001(\tR\010policyId\022%\n\016bundle_ver" +
+      "sion\030\002 \001(\tR\rbundleVersion\022)\n\020action_eval" +
+      "uated\030\003 \001(\tR\017actionEvaluated\022\030\n\007verdict\030" +
+      "\004 \001(\tR\007verdict\022\'\n\017rules_triggered\030\005 \003(\tR" +
+      "\016rulesTriggered\"\261\001\n\021InterventionEvent\022+\n" +
+      "\021intervention_type\030\001 \001(\tR\020interventionTy" +
+      "pe\022%\n\016trigger_reason\030\002 \001(\tR\rtriggerReaso" +
+      "n\022*\n\021trigger_metric_id\030\003 \001(\tR\017triggerMet" +
+      "ricId\022\034\n\tautomated\030\004 \001(\010R\tautomated\"\230\001\n\r" +
+      "RecoveryEvent\022#\n\rrecovery_type\030\001 \001(\tR\014re" +
+      "coveryType\022\035\n\nfrom_error\030\002 \001(\tR\tfromErro" +
+      "r\022\034\n\tsucceeded\030\003 \001(\010R\tsucceeded\022%\n\016attem" +
+      "pt_number\030\004 \001(\005R\rattemptNumber\"\204\001\n\022State" +
+      "SnapshotEvent\022#\n\rsnapshot_type\030\001 \001(\tR\014sn" +
+      "apshotType\022(\n\020state_size_bytes\030\002 \001(\003R\016st" +
+      "ateSizeBytes\022\037\n\013snapshot_id\030\003 \001(\tR\nsnaps" +
+      "hotId*\215\003\n\tEventType\022\032\n\026EVENT_TYPE_UNSPEC" +
+      "IFIED\020\000\022\020\n\014TASK_STARTED\020\001\022\022\n\016TASK_COMPLE" +
+      "TED\020\002\022\017\n\013TASK_FAILED\020\003\022\020\n\014STEP_STARTED\020\004" +
+      "\022\022\n\016STEP_COMPLETED\020\005\022\021\n\rDECISION_MADE\020\006\022" +
+      "\017\n\013TOOL_CALLED\020\007\022\021\n\rTOOL_RETURNED\020\010\022\027\n\023R" +
+      "ETRIEVAL_PERFORMED\020\t\022\017\n\013MEMORY_READ\020\n\022\022\n" +
+      "\016MEMORY_WRITTEN\020\013\022\025\n\021HANDOFF_INITIATED\020\014" +
+      "\022\024\n\020HANDOFF_ACCEPTED\020\r\022\024\n\020POLICY_EVALUAT" +
+      "ED\020\016\022\032\n\026INTERVENTION_TRIGGERED\020\017\022\026\n\022RECO" +
+      "VERY_ATTEMPTED\020\020\022\033\n\027STATE_SNAPSHOT_CAPTU" +
+      "RED\020\021B\227\001\n2build.buf.gen.ssforge.routeiq." +
+      "routeiq.v1.telemetryB\013EventsProtoZTbuf.b" +
+      "uild/gen/go/ssforge/routeiq/protocolbuff" +
+      "ers/go/routeiq/v1/telemetry;telemetryv1b" +
+      "\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -20246,7 +20395,7 @@ public final class EventsProto extends com.google.protobuf.GeneratedFile {
     internal_static_routeiq_v1_telemetry_AgentEvent_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_routeiq_v1_telemetry_AgentEvent_descriptor,
-        new java.lang.String[] { "TraceId", "SpanId", "ParentSpanId", "Timestamp", "EventType", "TenantId", "Environment", "TaskId", "RunId", "StepId", "AgentId", "AgentRole", "WorkflowId", "Versions", "AutonomyMode", "RiskTier", "Task", "Step", "Decision", "ToolCall", "Retrieval", "Memory", "Handoff", "Policy", "Intervention", "Recovery", "StateSnapshot", "Payload", });
+        new java.lang.String[] { "TraceId", "SpanId", "ParentSpanId", "Timestamp", "EventType", "TenantId", "Environment", "TaskId", "RunId", "StepId", "AgentId", "AgentRole", "WorkflowId", "Versions", "AutonomyMode", "RiskTier", "SessionId", "Task", "Step", "Decision", "ToolCall", "Retrieval", "Memory", "Handoff", "Policy", "Intervention", "Recovery", "StateSnapshot", "Payload", });
     internal_static_routeiq_v1_telemetry_TaskEvent_descriptor =
       getDescriptor().getMessageType(2);
     internal_static_routeiq_v1_telemetry_TaskEvent_fieldAccessorTable = new
