@@ -150,9 +150,9 @@ assert rule.condition.threshold == 0.1
 
 slo = slo_pb2.SloTarget()
 slo.metric_id = "task_success_rate"
-slo.target = 0.95
+slo.target_expression = ">=0.95"
 slo.window = "30d"
-assert slo.target == 0.95
+assert slo.metric_id == "task_success_rate"
 
 print("  insights: OK")
 

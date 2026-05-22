@@ -14,14 +14,11 @@ trap cleanup EXIT
 cat > "$GO_OUT/go.mod" << 'EOF'
 module buf.build/gen/go/ssforge/routeiq/protocolbuffers/go
 go 1.23
-require (
-	google.golang.org/protobuf v1.36.5
-	connectrpc.com/connect v1.20.0
-)
 EOF
 
 cd "$GO_OUT"
-go mod tidy -e 2>/dev/null || true  # fetch deps; -e tolerates minor issues
+# Explicitly fetch both runtime deps so go.sum is populated before build.
+go get google.golang.org/protobuf connectrpc.com/connect@v1.20.0
 
 # Build all packages under out/go — catches type errors, missing imports, etc.
 go build ./...

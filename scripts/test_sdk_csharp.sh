@@ -22,8 +22,8 @@ cp "$CS_OUT"/*.cs .
 # Add Google.Protobuf NuGet package (needed by generated code).
 dotnet add package Google.Protobuf --version 3.29.3 --no-restore
 
-dotnet restore --quiet
-dotnet build --no-restore --configuration Release --quiet
+dotnet restore
+dotnet build --no-restore --configuration Release
 
 # Verify key class names appear in each namespace's generated source.
 declare -A CHECKS

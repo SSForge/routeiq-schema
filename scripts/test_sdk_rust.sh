@@ -55,13 +55,28 @@ declare -A CHECKS
 CHECKS["$TELEMETRY_RS"]="AgentEvent TaskEvent StepEvent RetrievalEvent StateSnapshotEvent"
 CHECKS["$METRICS_RS"]="MetricDefinition Formula DeterministicFormula HeuristicFormula FrontierFormula"
 CHECKS["$INSIGHTS_RS"]="AlertRule Condition SloTarget"
-CHECKS["$CONTROL_RS"]="CheckGuardrailRequest GuardrailVerdict EscalateRequest"
+CHECKS["$CONTROL_RS"]="CheckGuardrailRequest EscalateRequest"
 CHECKS["$ADMIN_RS"]="Organization User ApiKey"
 
 for file in "${!CHECKS[@]}"; do
   for s in ${CHECKS[$file]}; do
     if ! grep -q "pub struct $s" "$file"; then
       echo "ERROR: $(basename "$file") missing struct: $s"
+      exit 1
+    fi
+  done
+done
+
+# Enum checks (separate because grep pattern differs)
+declare -A ENUM_CHECKS
+ENUM_CHECKS["$CONTROL_RS"]="GuardrailVerdict EscalationUrgency"
+ENUM_CHECKS["$METRICS_RS"]="Layer EvidenceClass"
+ENUM_CHECKS["$INSIGHTS_RS"]="Severity Operator"
+
+for file in "${!ENUM_CHECKS[@]}"; do
+  for e in ${ENUM_CHECKS[$file]}; do
+    if ! grep -q "pub enum $e" "$file"; then
+      echo "ERROR: $(basename "$file") missing enum: $e"
       exit 1
     fi
   done

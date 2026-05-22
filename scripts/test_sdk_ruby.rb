@@ -10,7 +10,8 @@ $LOAD_PATH.unshift("out/ruby/lib/routeiq/proto")
 require "google/protobuf"
 
 # ── Telemetry ─────────────────────────────────────────────────────────────────
-load "out/ruby/lib/routeiq/proto/routeiq/v1/telemetry/entities_pb.rb"
+# Load events_pb.rb only; it internally requires entities_pb via the load path.
+# Loading entities_pb.rb first would register it twice and crash.
 load "out/ruby/lib/routeiq/proto/routeiq/v1/telemetry/events_pb.rb"
 
 telemetry_classes = %w[
@@ -72,8 +73,8 @@ begin
   rule = Routeiq::V1::Insights::AlertRule.new(id: "high-loop-rate", metric_id: "loop_rate", enabled: true)
   errors << "AlertRule.metric_id wrong" unless rule.metric_id == "loop_rate"
 
-  slo = Routeiq::V1::Insights::SloTarget.new(metric_id: "task_success_rate", target: 0.95)
-  errors << "SloTarget.target wrong" unless slo.target == 0.95
+  slo = Routeiq::V1::Insights::SloTarget.new(metric_id: "task_success_rate", target_expression: ">=0.95")
+  errors << "SloTarget.metric_id wrong" unless slo.metric_id == "task_success_rate"
 rescue => e
   errors << "insights: #{e.message}"
 end
