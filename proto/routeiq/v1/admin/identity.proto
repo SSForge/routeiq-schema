@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package routeiq.v1.admin;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/admin;adminv1";
+option java_outer_classname = "IdentityProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.admin";
+
+service IdentityService {
+  rpc InviteUser(InviteUserRequest) returns (User);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc AssignRole(AssignRoleRequest) returns (RoleAssignment);
+  rpc CreateApiKey(CreateApiKeyRequest) returns (ApiKey);
+  rpc RevokeApiKey(RevokeApiKeyRequest) returns (google.protobuf.Empty);
+  rpc ListApiKeys(ListApiKeysRequest) returns (ListApiKeysResponse);
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string display_name = 3;
+  AuthProvider auth_provider = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message RoleAssignment {
+  string user_id = 1;
+  string organization_id = 2;
+  Role role = 3;
+}
+
+message ApiKey {
+  string id = 1;
+  string organization_id = 2;
+  string workspace_id = 3;
+  string prefix = 4;
+  ApiKeyScope scope = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expires_at = 7;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  VIEWER = 1;
+  ANALYST = 2;
+  ADMIN = 3;
+  OWNER = 4;
+}
+
+enum AuthProvider {
+  AUTH_PROVIDER_UNSPECIFIED = 0;
+  GOOGLE = 1;
+  GITHUB = 2;
+  SAML = 3;
+}
+
+enum ApiKeyScope {
+  API_KEY_SCOPE_UNSPECIFIED = 0;
+  INGEST_ONLY = 1;
+  INGEST_AND_CONTROL = 2;
+  ADMIN_SCOPE = 3;
+}
+
+message InviteUserRequest {
+  string organization_id = 1;
+  string email = 2;
+  Role role = 3;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message AssignRoleRequest {
+  string user_id = 1;
+  string organization_id = 2;
+  Role role = 3;
+}
+
+message CreateApiKeyRequest {
+  string organization_id = 1;
+  string workspace_id = 2;
+  ApiKeyScope scope = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message RevokeApiKeyRequest {
+  string id = 1;
+}
+
+message ListApiKeysRequest {
+  string organization_id = 1;
+  string workspace_id = 2;
+}
+
+message ListApiKeysResponse {
+  repeated ApiKey api_keys = 1;
+}
