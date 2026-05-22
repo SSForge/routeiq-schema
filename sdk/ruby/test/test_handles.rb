@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "securerandom"
 require "opentelemetry/sdk"
 require_relative "../lib/routeiq/version"
 require_relative "../lib/routeiq/handles"

@@ -2,7 +2,7 @@ use opentelemetry::{trace::TracerProvider as _, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
     resource::Resource,
-    trace::{self as sdktrace, SdkTracerProvider},
+    trace::SdkTracerProvider,
 };
 use uuid::Uuid;
 
@@ -35,6 +35,7 @@ impl RouteIQ {
     pub fn new(opts: RouteIQOptions) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let endpoint = opts
             .otlp_endpoint
+            .clone()
             .unwrap_or_else(|| "http://localhost:4317".to_string());
 
         let exporter = opentelemetry_otlp::SpanExporter::builder()

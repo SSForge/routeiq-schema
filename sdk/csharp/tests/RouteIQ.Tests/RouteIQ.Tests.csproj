@@ -12,7 +12,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="OpenTelemetry"           Version="1.10.0" />
+    <PackageReference Include="OpenTelemetry"                     Version="1.10.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory"  Version="1.10.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/RouteIQ/RouteIQ.csproj" />
