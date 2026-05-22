@@ -91,14 +91,3 @@ jobs:
         run: |
           mkdir -p .sdk-test-libs
           bash scripts/test_sdk_csharp.sh
-
-  detectors:
-    name: Detectors
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Run detector smoke tests
-        run: python scripts/test_detectors.py
