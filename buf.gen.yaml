@@ -1,5 +1,6 @@
 version: v2
 plugins:
+  # ── Stable (Phase 1+) ────────────────────────────────────────────────────
   # Python — protobuf messages + Connect RPC stubs
   - remote: buf.build/protocolbuffers/python
     out: out/python/src/routeiq/_proto
@@ -21,3 +22,24 @@ plugins:
     out: out/go
     opt:
       - paths=source_relative
+
+  # ── Preview (Phase 2+, promoted to stable in Phase 4) ───────────────────
+  # Java
+  - remote: buf.build/protocolbuffers/java
+    out: out/java/src/main/java
+  - remote: buf.build/connectrpc/java
+    out: out/java/src/main/java
+
+  # Rust
+  - remote: buf.build/community/neoeinstein-prost
+    out: out/rust/src/proto
+  - remote: buf.build/community/neoeinstein-tonic
+    out: out/rust/src/proto
+
+  # Ruby
+  - remote: buf.build/protocolbuffers/ruby
+    out: out/ruby/lib/routeiq/proto
+
+  # C#
+  - remote: buf.build/protocolbuffers/csharp
+    out: out/csharp/src/RouteIQ/Proto
