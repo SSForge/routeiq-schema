@@ -1,0 +1,168 @@
+# RouteIQ OTel Semantic Conventions — Phase 1 (telemetry namespace)
+# Format: ConventionRegistry proto shape (see proto/routeiq/v1/telemetry/conventions.proto)
+# Every AgentEvent field emitted on the wire must have a row here.
+
+conventions:
+  # ── AgentEvent envelope ──────────────────────────────────────────────────
+  - proto_field_path: "AgentEvent.event_type"
+    otel_attribute_key: "routeiq.event.type"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.tenant_id"
+    otel_attribute_key: "routeiq.tenant.id"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.environment"
+    otel_attribute_key: "routeiq.environment"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.task_id"
+    otel_attribute_key: "routeiq.task.id"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.run_id"
+    otel_attribute_key: "routeiq.run.id"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.step_id"
+    otel_attribute_key: "routeiq.step.id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "AgentEvent.agent_id"
+    otel_attribute_key: "routeiq.agent.id"
+    type: STRING
+    required: true
+
+  - proto_field_path: "AgentEvent.agent_role"
+    otel_attribute_key: "routeiq.agent.role"
+    type: STRING
+    required: false
+
+  - proto_field_path: "AgentEvent.workflow_id"
+    otel_attribute_key: "routeiq.workflow.id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "AgentEvent.autonomy_mode"
+    otel_attribute_key: "routeiq.autonomy.mode"
+    type: STRING
+    required: false
+
+  - proto_field_path: "AgentEvent.risk_tier"
+    otel_attribute_key: "routeiq.risk.tier"
+    type: STRING
+    required: false
+
+  # ── VersionLineage ───────────────────────────────────────────────────────
+  - proto_field_path: "VersionLineage.agent_version"
+    otel_attribute_key: "routeiq.version.agent"
+    type: STRING
+    required: false
+
+  - proto_field_path: "VersionLineage.model_name"
+    otel_attribute_key: "routeiq.version.model.name"
+    type: STRING
+    required: false
+
+  - proto_field_path: "VersionLineage.model_version"
+    otel_attribute_key: "routeiq.version.model.version"
+    type: STRING
+    required: false
+
+  - proto_field_path: "VersionLineage.prompt_version"
+    otel_attribute_key: "routeiq.version.prompt"
+    type: STRING
+    required: false
+
+  - proto_field_path: "VersionLineage.policy_bundle_version"
+    otel_attribute_key: "routeiq.version.policy_bundle"
+    type: STRING
+    required: false
+
+  # ── TaskEvent ────────────────────────────────────────────────────────────
+  - proto_field_path: "TaskEvent.input_intent"
+    otel_attribute_key: "routeiq.task.input_intent"
+    type: STRING
+    required: false
+
+  - proto_field_path: "TaskEvent.normalized_task_type"
+    otel_attribute_key: "routeiq.task.type"
+    type: STRING
+    required: false
+
+  - proto_field_path: "TaskEvent.completion_status"
+    otel_attribute_key: "routeiq.task.completion_status"
+    type: STRING
+    required: true
+
+  - proto_field_path: "TaskEvent.failure_category"
+    otel_attribute_key: "routeiq.task.failure_category"
+    type: STRING
+    required: false
+
+  - proto_field_path: "TaskEvent.total_cost_usd"
+    otel_attribute_key: "routeiq.task.cost_usd"
+    type: DOUBLE
+    required: false
+
+  - proto_field_path: "TaskEvent.total_tokens"
+    otel_attribute_key: "routeiq.task.total_tokens"
+    type: INT64
+    required: false
+
+  - proto_field_path: "TaskEvent.human_escalated"
+    otel_attribute_key: "routeiq.task.human_escalated"
+    type: BOOL
+    required: false
+
+  - proto_field_path: "TaskEvent.rolled_back"
+    otel_attribute_key: "routeiq.task.rolled_back"
+    type: BOOL
+    required: false
+
+  - proto_field_path: "TaskEvent.cohort"
+    otel_attribute_key: "routeiq.task.cohort"
+    type: STRING
+    required: false
+
+  # ── ToolCallEvent ────────────────────────────────────────────────────────
+  - proto_field_path: "ToolCallEvent.tool_name"
+    otel_attribute_key: "routeiq.tool.name"
+    type: STRING
+    required: true
+
+  - proto_field_path: "ToolCallEvent.tool_version"
+    otel_attribute_key: "routeiq.tool.version"
+    type: STRING
+    required: false
+
+  - proto_field_path: "ToolCallEvent.arguments_hash"
+    otel_attribute_key: "routeiq.tool.arguments_hash"
+    type: STRING
+    required: false
+
+  - proto_field_path: "ToolCallEvent.permission_level"
+    otel_attribute_key: "routeiq.tool.permission_level"
+    type: STRING
+    required: false
+
+  - proto_field_path: "ToolCallEvent.latency_ms"
+    otel_attribute_key: "routeiq.tool.latency_ms"
+    type: DOUBLE
+    required: false
+
+  - proto_field_path: "ToolCallEvent.result_status"
+    otel_attribute_key: "routeiq.tool.result_status"
+    type: STRING
+    required: true
+
+  - proto_field_path: "ToolCallEvent.error_code"
+    otel_attribute_key: "routeiq.tool.error_code"
+    type: STRING
+    required: false
