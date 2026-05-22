@@ -165,3 +165,26 @@ message PolicyEvent {
   string verdict = 4; // "allow" | "block" | "require_approval"
   repeated string rules_triggered = 5; // IDs of individual rules that fired
 }
+
+// InterventionEvent records a system or human intervention that interrupted normal agent flow.
+message InterventionEvent {
+  string intervention_type = 1; // "circuit_break" | "rollback" | "escalate_human" | "model_swap" | "autonomy_downgrade"
+  string trigger_reason = 2;
+  string trigger_metric_id = 3; // metric that breached threshold, if system-triggered
+  bool automated = 4; // true = system-triggered; false = human-triggered
+}
+
+// RecoveryEvent records a recovery attempt following a failure or intervention.
+message RecoveryEvent {
+  string recovery_type = 1; // "retry" | "fallback" | "rollback" | "restart"
+  string from_error = 2; // error code or short description of what failed
+  bool succeeded = 3;
+  int32 attempt_number = 4; // 1-indexed; >1 means this is a retry
+}
+
+// StateSnapshotEvent records a point-in-time capture of agent working state.
+message StateSnapshotEvent {
+  string snapshot_type = 1; // "checkpoint" | "pre_tool" | "post_tool" | "on_error"
+  int64 state_size_bytes = 2;
+  string snapshot_id = 3;
+}
