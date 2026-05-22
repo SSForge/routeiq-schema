@@ -147,3 +147,21 @@ message MemoryEvent {
   string key_summary = 3; // sanitized key/description — PII redacted by collector
   int32 entries_affected = 4;
 }
+
+// HandoffEvent records an agent-to-agent delegation of a task or sub-task.
+message HandoffEvent {
+  string from_agent_id = 1;
+  string to_agent_id = 2;
+  string handoff_reason = 3;
+  CompletionStatus status = 4; // COMPLETED = handoff accepted; FAILURE = rejected
+  string context_summary = 5; // sanitized summary of context passed to receiving agent
+}
+
+// PolicyEvent records the evaluation of a policy bundle against a proposed action.
+message PolicyEvent {
+  string policy_id = 1;
+  string bundle_version = 2;
+  string action_evaluated = 3;
+  string verdict = 4; // "allow" | "block" | "require_approval"
+  repeated string rules_triggered = 5; // IDs of individual rules that fired
+}
