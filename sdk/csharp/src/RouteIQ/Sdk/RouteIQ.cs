@@ -3,6 +3,8 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("RouteIQ.Tests")]
+
 namespace RouteIQ.Sdk;
 
 public sealed class RouteIQClient : IDisposable

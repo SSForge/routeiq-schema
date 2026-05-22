@@ -12,7 +12,7 @@ public class HandlesTests
     {
         var spans = new List<Activity>();
 
-        var provider = Sdk.CreateTracerProviderBuilder()
+        var provider = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
             .AddSource("routeiq.sdk")
             .AddInMemoryExporter(spans)
             .Build()!;

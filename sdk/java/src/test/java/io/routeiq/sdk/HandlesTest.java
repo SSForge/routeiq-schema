@@ -19,10 +19,8 @@ class HandlesTest {
 
     @BeforeEach
     void setUp() {
-        var provider = otelTesting.getOpenTelemetry().getTracerProvider();
-        // Cast to SdkTracerProvider to use the test constructor
-        riq = new RouteIQ("test-agent",
-                (io.opentelemetry.sdk.trace.SdkTracerProvider) provider);
+        var sdk = (io.opentelemetry.sdk.OpenTelemetrySdk) otelTesting.getOpenTelemetry();
+        riq = new RouteIQ("test-agent", sdk.getSdkTracerProvider());
     }
 
     private SpanData findSpan(String prefix) {

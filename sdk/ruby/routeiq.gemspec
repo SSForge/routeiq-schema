@@ -10,4 +10,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "opentelemetry-sdk", "~> 1.4"
   spec.add_dependency "opentelemetry-exporter-otlp", "~> 0.28"
+
+  spec.add_development_dependency "minitest"
 end
