@@ -37,8 +37,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: node scripts/test_sdk_typescript.js
+      - name: Install developer layer deps
+        run: cd sdk/typescript && npm ci
+      - name: Run developer layer unit tests
+        run: cd sdk/typescript && npm test
 
   go:
     name: Go SDK
@@ -48,8 +52,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23"
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: bash scripts/test_sdk_go.sh
+      - name: Run developer layer unit tests
+        run: cd sdk/go && go test ./routeiq/... -v
 
   java:
     name: Java SDK
@@ -60,10 +66,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: |
           mkdir -p .sdk-test-libs/java-classes
           bash scripts/test_sdk_java.sh
+      - name: Run developer layer unit tests
+        run: cd sdk/java && mvn test -q
 
   rust:
     name: Rust SDK
@@ -72,8 +80,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: bash scripts/test_sdk_rust.sh
+      - name: Run developer layer unit tests
+        run: cd sdk/rust && cargo test
 
   ruby:
     name: Ruby SDK
@@ -85,8 +95,12 @@ jobs:
           ruby-version: "3.3"
       - name: Install protobuf gem
         run: gem install google-protobuf
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: ruby scripts/test_sdk_ruby.rb
+      - name: Install developer layer gems
+        run: cd sdk/ruby && bundle install
+      - name: Run developer layer unit tests
+        run: cd sdk/ruby && bundle exec ruby test/test_handles.rb
 
   csharp:
     name: C# SDK
@@ -96,7 +110,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.x"
-      - name: Run SDK test
+      - name: Run proto smoke test
         run: |
           mkdir -p .sdk-test-libs
           bash scripts/test_sdk_csharp.sh
+      - name: Run developer layer unit tests
+        run: dotnet test sdk/csharp/tests/RouteIQ.Tests/ --verbosity normal

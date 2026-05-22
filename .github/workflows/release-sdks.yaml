@@ -30,6 +30,7 @@ jobs:
         include:
           - lang: go
             src: out/go
+            sdk: sdk/go
             repo: SSForge/routeiq-sdk-go
           - lang: python
             src: out/python
@@ -37,18 +38,23 @@ jobs:
             repo: SSForge/routeiq-sdk-python
           - lang: typescript
             src: out/typescript
+            sdk: sdk/typescript
             repo: SSForge/routeiq-sdk-typescript
           - lang: ruby
             src: out/ruby
+            sdk: sdk/ruby
             repo: SSForge/routeiq-sdk-ruby
           - lang: rust
             src: out/rust
+            sdk: sdk/rust
             repo: SSForge/routeiq-sdk-rust
           - lang: csharp
             src: out/csharp
+            sdk: sdk/csharp
             repo: SSForge/routeiq-sdk-csharp
           - lang: java
             src: out/java
+            sdk: sdk/java
             repo: SSForge/routeiq-sdk-java
 
     steps:
