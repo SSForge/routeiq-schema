@@ -3,16 +3,18 @@
 
 # BSR Ruby layout: generated files live under out/ruby/lib/routeiq/proto/
 # but they require 'routeiq/v1/...' (without the proto prefix).
-# Adding the nested proto dir satisfies those requires.
+# Adding the nested proto dir satisfies those internal requires.
 $LOAD_PATH.unshift("out/ruby/lib")
 $LOAD_PATH.unshift("out/ruby/lib/routeiq/proto")
 
 require "google/protobuf"
 
+# Use `require` (not `load`) throughout so Ruby tracks each file in
+# $LOADED_FEATURES and cross-package internal requires don't re-register
+# the same descriptor, which would cause a duplicate pool error.
+
 # ── Telemetry ─────────────────────────────────────────────────────────────────
-# Load events_pb.rb only; it internally requires entities_pb via the load path.
-# Loading entities_pb.rb first would register it twice and crash.
-load "out/ruby/lib/routeiq/proto/routeiq/v1/telemetry/events_pb.rb"
+require "routeiq/v1/telemetry/events_pb"
 
 telemetry_classes = %w[
   Routeiq::V1::Telemetry::AgentEvent
@@ -46,7 +48,7 @@ errors << "RetrievalEvent.cache_hit field not working" unless r.cache_hit == tru
 puts "  telemetry: OK (#{telemetry_classes.size} classes)"
 
 # ── Metrics ───────────────────────────────────────────────────────────────────
-load "out/ruby/lib/routeiq/proto/routeiq/v1/metrics/definitions_pb.rb"
+require "routeiq/v1/metrics/definitions_pb"
 
 begin
   m = Routeiq::V1::Metrics::MetricDefinition.new(id: "loop_rate", unit: "percent")
@@ -66,8 +68,8 @@ end
 puts "  metrics: OK"
 
 # ── Insights ──────────────────────────────────────────────────────────────────
-load "out/ruby/lib/routeiq/proto/routeiq/v1/insights/alerts_pb.rb"
-load "out/ruby/lib/routeiq/proto/routeiq/v1/insights/slo_pb.rb"
+require "routeiq/v1/insights/alerts_pb"
+require "routeiq/v1/insights/slo_pb"
 
 begin
   rule = Routeiq::V1::Insights::AlertRule.new(id: "high-loop-rate", metric_id: "loop_rate", enabled: true)
@@ -82,8 +84,8 @@ end
 puts "  insights: OK"
 
 # ── Control ───────────────────────────────────────────────────────────────────
-load "out/ruby/lib/routeiq/proto/routeiq/v1/control/guardrail_pb.rb"
-load "out/ruby/lib/routeiq/proto/routeiq/v1/control/escalation_pb.rb"
+require "routeiq/v1/control/guardrail_pb"
+require "routeiq/v1/control/escalation_pb"
 
 begin
   req = Routeiq::V1::Control::CheckGuardrailRequest.new(
@@ -104,8 +106,8 @@ end
 puts "  control: OK"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
-load "out/ruby/lib/routeiq/proto/routeiq/v1/admin/organization_pb.rb"
-load "out/ruby/lib/routeiq/proto/routeiq/v1/admin/identity_pb.rb"
+require "routeiq/v1/admin/organization_pb"
+require "routeiq/v1/admin/identity_pb"
 
 begin
   org = Routeiq::V1::Admin::Organization.new(id: "org-001", name: "Acme Corp")

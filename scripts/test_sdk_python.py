@@ -185,7 +185,7 @@ from routeiq._proto.routeiq.v1.admin import organization_pb2, identity_pb2
 org = organization_pb2.Organization()
 org.id = "org-001"
 org.name = "Acme Corp"
-org.tier = organization_pb2.TEAM
+org.tier = organization_pb2.PRO
 assert org.name == "Acme Corp"
 
 ws = organization_pb2.Workspace()

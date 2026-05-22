@@ -30,7 +30,7 @@ declare -A CHECKS
 CHECKS["$CS_OUT/Events.cs"]="AgentEvent TaskEvent StepEvent RetrievalEvent StateSnapshotEvent"
 CHECKS["$CS_OUT/Definitions.cs"]="MetricDefinition Formula"
 CHECKS["$CS_OUT/Alerts.cs"]="AlertRule Condition"
-CHECKS["$CS_OUT/Guardrail.cs"]="CheckGuardrailRequest GuardrailVerdict"
+CHECKS["$CS_OUT/Guardrail.cs"]="CheckGuardrailRequest"
 CHECKS["$CS_OUT/Organization.cs"]="Organization Workspace"
 CHECKS["$CS_OUT/Identity.cs"]="User ApiKey"
 
@@ -38,6 +38,21 @@ for file in "${!CHECKS[@]}"; do
   for t in ${CHECKS[$file]}; do
     if ! grep -q "class $t" "$file"; then
       echo "ERROR: $(basename "$file") missing class: $t"
+      exit 1
+    fi
+  done
+done
+
+# Enum checks (C# generates `public enum` not `public sealed partial class`)
+declare -A ENUM_CHECKS
+ENUM_CHECKS["$CS_OUT/Guardrail.cs"]="GuardrailVerdict"
+ENUM_CHECKS["$CS_OUT/Alerts.cs"]="Severity Operator"
+ENUM_CHECKS["$CS_OUT/Entities.cs"]="CompletionStatus PermissionLevel"
+
+for file in "${!ENUM_CHECKS[@]}"; do
+  for e in ${ENUM_CHECKS[$file]}; do
+    if ! grep -q "enum $e" "$file"; then
+      echo "ERROR: $(basename "$file") missing enum: $e"
       exit 1
     fi
   done
