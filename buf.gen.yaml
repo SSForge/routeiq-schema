@@ -1,0 +1,23 @@
+version: v2
+plugins:
+  # Python — protobuf messages + Connect RPC stubs
+  - remote: buf.build/protocolbuffers/python
+    out: out/python/src/routeiq/_proto
+  - remote: buf.build/connectrpc/python
+    out: out/python/src/routeiq/_proto
+
+  # TypeScript — ES modules + Connect RPC stubs
+  - remote: buf.build/bufbuild/es
+    out: out/typescript/src/proto
+  - remote: buf.build/connectrpc/es
+    out: out/typescript/src/proto
+
+  # Go — generated Go package + Connect RPC stubs
+  - remote: buf.build/protocolbuffers/go
+    out: out/go
+    opt:
+      - paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: out/go
+    opt:
+      - paths=source_relative
