@@ -11,7 +11,7 @@ cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
 cd "$TMP_DIR"
-dotnet new classlib -n RouteIQSdkVerify --no-restore -o . --framework net8.0 --quiet
+dotnet new classlib -n RouteIQSdkVerify --no-restore -o . --framework net8.0
 
 # Remove the placeholder Class1.cs that dotnet new creates.
 rm -f Class1.cs

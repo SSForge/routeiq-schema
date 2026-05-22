@@ -11,7 +11,11 @@ if sys.version_info < (3, 12):
     print(f"SKIP: Python SDK test requires Python 3.12+ (running {sys.version}). Passes in CI.")
     sys.exit(0)
 
+# BSR Python layout: packages live under out/python/src/routeiq/_proto/
+# but generated files import from routeiq.v1.* (without the _proto prefix).
+# Adding the _proto dir to sys.path makes those imports resolve.
 sys.path.insert(0, "out/python/src")
+sys.path.insert(0, "out/python/src/routeiq/_proto")
 
 # ── Telemetry ─────────────────────────────────────────────────────────────────
 from routeiq._proto.routeiq.v1.telemetry import events_pb2, entities_pb2

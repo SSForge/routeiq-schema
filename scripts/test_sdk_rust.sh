@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Verifies the generated Rust SDK across all five namespaces.
-# Creates a minimal Cargo project that depends on prost, includes all
-# generated source files, and compiles with `cargo check`.
+# Wraps each generated file in its own module so cross-namespace super::
+# references (e.g. metrics -> super::telemetry) resolve correctly.
 set -euo pipefail
 
 WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -37,13 +37,14 @@ prost = "0.13"
 prost-types = "0.13"
 EOF
 
-# Include all five generated files — same pattern as prost users.
+# Each generated file uses super::<namespace> to reference cross-package types.
+# Wrap them in sibling modules so super:: resolves to the parent module.
 cat > "$TMP_DIR/src/lib.rs" << RUST
-include!("$(realpath "$TELEMETRY_RS")");
-include!("$(realpath "$METRICS_RS")");
-include!("$(realpath "$INSIGHTS_RS")");
-include!("$(realpath "$CONTROL_RS")");
-include!("$(realpath "$ADMIN_RS")");
+pub mod telemetry { include!("$(realpath "$TELEMETRY_RS")"); }
+pub mod metrics   { include!("$(realpath "$METRICS_RS")"); }
+pub mod insights  { include!("$(realpath "$INSIGHTS_RS")"); }
+pub mod control   { include!("$(realpath "$CONTROL_RS")"); }
+pub mod admin     { include!("$(realpath "$ADMIN_RS")"); }
 RUST
 
 cd "$TMP_DIR"

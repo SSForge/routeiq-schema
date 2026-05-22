@@ -1,7 +1,11 @@
 # Verifies the generated Ruby SDK across all five namespaces:
 # telemetry, metrics, insights, control, admin.
 
+# BSR Ruby layout: generated files live under out/ruby/lib/routeiq/proto/
+# but they require 'routeiq/v1/...' (without the proto prefix).
+# Adding the nested proto dir satisfies those requires.
 $LOAD_PATH.unshift("out/ruby/lib")
+$LOAD_PATH.unshift("out/ruby/lib/routeiq/proto")
 
 require "google/protobuf"
 

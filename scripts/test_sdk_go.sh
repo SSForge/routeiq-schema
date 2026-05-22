@@ -14,7 +14,10 @@ trap cleanup EXIT
 cat > "$GO_OUT/go.mod" << 'EOF'
 module buf.build/gen/go/ssforge/routeiq/protocolbuffers/go
 go 1.23
-require google.golang.org/protobuf v1.36.5
+require (
+	google.golang.org/protobuf v1.36.5
+	connectrpc.com/connect v1.20.0
+)
 EOF
 
 cd "$GO_OUT"
