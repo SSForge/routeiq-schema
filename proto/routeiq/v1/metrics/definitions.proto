@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package routeiq.v1.metrics;
+
+import "routeiq/v1/telemetry/events.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/metrics;metricsv1";
+option java_outer_classname = "DefinitionsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.metrics";
+
+// MetricDefinition is the canonical declaration of a single derived metric.
+// Lives in routeiq-catalog as YAML; this proto defines the shape only.
+message MetricDefinition {
+  string id = 1;
+  string display_name = 2;
+  string description = 3;
+  Layer layer = 4;
+  EvidenceClass evidence_class = 5;
+  repeated MetricInput inputs = 6;
+  Formula formula = 7;
+  string unit = 8;
+  Aggregation default_aggregation = 9;
+  repeated SloTemplate slo_templates = 10;
+}
+
+enum Layer {
+  LAYER_UNSPECIFIED = 0;
+  LAYER_0_RUNTIME = 1;
+  LAYER_1_AGENT_BEHAVIOR = 2;
+  LAYER_2_QUALITY = 3;
+  LAYER_3_BUSINESS = 4;
+  LAYER_4_GOVERNANCE = 5;
+}
+
+enum EvidenceClass {
+  EVIDENCE_UNSPECIFIED = 0;
+  OTEL_DIRECT = 1;
+  HEURISTIC = 2;
+  SEMANTIC = 3;
+  FRONTIER = 4;
+}
+
+enum Aggregation {
+  AGGREGATION_UNSPECIFIED = 0;
+  AVG = 1;
+  SUM = 2;
+  COUNT = 3;
+  RATE = 4;
+  P50 = 5;
+  P90 = 6;
+  P95 = 7;
+  P99 = 8;
+  MAX = 9;
+  MIN = 10;
+  LAST = 11;
+}
+
+message MetricInput {
+  repeated routeiq.v1.telemetry.EventType event_types = 1;
+  repeated string field_paths = 2;
+  string filter = 3;
+}
+
+message SloTemplate {
+  string tier = 1;
+  string target = 2;
+}
+
+// Formula is the computation declaration for a metric. Exactly one kind is set.
+message Formula {
+  oneof kind {
+    DeterministicFormula deterministic = 1;
+    HeuristicFormula heuristic = 2;
+    SemanticFormula semantic = 3;
+    FrontierFormula frontier = 4;
+  }
+}
+
+message DeterministicFormula {
+  string expression = 1;
+}
+
+message HeuristicFormula {
+  string detector_id = 1;
+  map<string, string> parameters = 2;
+}
+
+message SemanticFormula {
+  string classifier_id = 1;
+  string operation = 2;
+}
+
+message FrontierFormula {
+  string judge_model = 1;
+  string rubric_id = 2;
+}
