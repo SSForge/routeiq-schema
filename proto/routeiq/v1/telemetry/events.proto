@@ -110,3 +110,22 @@ message ToolCallEvent {
   string result_summary = 11;
   repeated string result_quality_flags = 12;
 }
+
+// StepEvent captures the outcome of a single reasoning step within a task run.
+message StepEvent {
+  string selected_action = 1;
+  string action_rationale = 2;
+  CompletionStatus completion_status = 3;
+  FailureCategory failure_category = 4;
+  int32 step_index = 5;
+  int32 retry_count = 6;
+}
+
+// DecisionEvent records a branching decision point — which path or tool the agent chose.
+message DecisionEvent {
+  string decision_type = 1; // "tool_selection" | "path_choice" | "escalation_check"
+  string options_considered = 2; // JSON or natural-language summary of alternatives
+  string chosen_option = 3;
+  string rationale = 4;
+  double confidence = 5; // 0.0–1.0 model-reported confidence
+}
