@@ -1,13 +1,14 @@
 version: v2
-name: buf.build/ssforge/routeiq
+modules:
+  - path: proto
+    name: buf.build/ssforge/routeiq
 # deps added in Phase 3 when metrics protos import OTel and Google API protos
-# - buf.build/opentelemetry/opentelemetry (for gen_ai semantic conventions)
-# - buf.build/googleapis/googleapis (for google/api/annotations.proto)
 lint:
   use:
     - STANDARD
   except:
     - PACKAGE_VERSION_SUFFIX
+    - ENUM_VALUE_PREFIX
 breaking:
   use:
     - FILE

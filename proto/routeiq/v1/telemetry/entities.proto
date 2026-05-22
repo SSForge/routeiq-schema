@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package routeiq.v1.telemetry;
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/telemetry;telemetryv1";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry";
+option java_outer_classname = "EntitiesProto";
+
+enum CompletionStatus {
+  COMPLETION_STATUS_UNSPECIFIED = 0;
+  SUCCESS = 1;
+  FAILURE = 2;
+  PARTIAL = 3;
+  CANCELLED = 4;
+  TIMEOUT = 5;
+}
+
+enum FailureCategory {
+  FAILURE_CATEGORY_UNSPECIFIED = 0;
+  TOOL_ERROR = 1;
+  MODEL_ERROR = 2;
+  POLICY_BLOCK = 3;
+  LOOP_DETECTED = 4;
+  TIMEOUT_EXCEEDED = 5;
+  HUMAN_CANCELLED = 6;
+  RESOURCE_EXHAUSTED = 7;
+  CONTEXT_OVERFLOW = 8;
+}
+
+enum AutonomyMode {
+  AUTONOMY_MODE_UNSPECIFIED = 0;
+  SUPERVISED = 1;
+  SEMI_AUTONOMOUS = 2;
+  AUTONOMOUS = 3;
+}
+
+enum RiskTier {
+  RISK_TIER_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}
+
+enum PermissionLevel {
+  PERMISSION_LEVEL_UNSPECIFIED = 0;
+  READ_ONLY = 1;
+  READ_WRITE = 2;
+  PRIVILEGED = 3;
+  SYSTEM = 4;
+}
+
+enum ToolResultStatus {
+  TOOL_RESULT_STATUS_UNSPECIFIED = 0;
+  TOOL_SUCCESS = 1;
+  TOOL_FAILURE = 2;
+  TOOL_TIMEOUT = 3;
+  TOOL_PERMISSION_DENIED = 4;
+}
+
+enum AttributeType {
+  ATTRIBUTE_TYPE_UNSPECIFIED = 0;
+  STRING = 1;
+  INT64 = 2;
+  DOUBLE = 3;
+  BOOL = 4;
+  BYTES = 5;
+  STRING_ARRAY = 6;
+}
