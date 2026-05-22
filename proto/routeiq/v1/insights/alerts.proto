@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package routeiq.v1.insights;
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/insights;insightsv1";
+option java_outer_classname = "AlertsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.insights";
+
+message AlertRule {
+  string id = 1;
+  string metric_id = 2;
+  Condition condition = 3;
+  Severity severity = 4;
+  repeated RecommendedAction actions = 5;
+  string description = 6;
+  bool enabled = 7;
+}
+
+message Condition {
+  Operator op = 1;
+  double threshold = 2;
+  string window = 3;
+  int32 min_samples = 4;
+}
+
+enum Operator {
+  OPERATOR_UNSPECIFIED = 0;
+  GT = 1;
+  LT = 2;
+  GTE = 3;
+  LTE = 4;
+  EQ = 5;
+  TREND_UP = 6;
+  TREND_DOWN = 7;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  INFO = 1;
+  WARNING = 2;
+  CRITICAL = 3;
+  PAGE = 4;
+}
+
+enum RecommendedAction {
+  ACTION_UNSPECIFIED = 0;
+  REDUCE_AUTONOMY = 1;
+  CIRCUIT_BREAK = 2;
+  ESCALATE_HUMAN = 3;
+  ROLLBACK_VERSION = 4;
+  SWITCH_MODEL = 5;
+  REQUIRE_APPROVAL = 6;
+}
