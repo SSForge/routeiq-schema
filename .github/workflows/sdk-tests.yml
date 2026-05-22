@@ -1,0 +1,93 @@
+name: sdk-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install protobuf runtime
+        run: pip install protobuf
+      - name: Run SDK test
+        run: python scripts/test_sdk_python.py
+
+  typescript:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run SDK test
+        run: node scripts/test_sdk_typescript.js
+
+  go:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - name: Run SDK test
+        run: bash scripts/test_sdk_go.sh
+
+  java:
+    name: Java SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Run SDK test
+        run: |
+          mkdir -p .sdk-test-libs/java-classes
+          bash scripts/test_sdk_java.sh
+
+  rust:
+    name: Rust SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run SDK test
+        run: bash scripts/test_sdk_rust.sh
+
+  ruby:
+    name: Ruby SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Install protobuf gem
+        run: gem install google-protobuf
+      - name: Run SDK test
+        run: ruby scripts/test_sdk_ruby.rb
+
+  csharp:
+    name: C# SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
+      - name: Run SDK test
+        run: |
+          mkdir -p .sdk-test-libs
+          bash scripts/test_sdk_csharp.sh
