@@ -23,17 +23,13 @@ plugins:
     opt:
       - paths=source_relative
 
-  # ── Preview (Phase 2+, promoted to stable in Phase 4) ───────────────────
+  # ── Preview (Phase 2+) — base message types only; Connect stubs added Phase 4 ──
   # Java
   - remote: buf.build/protocolbuffers/java
-    out: out/java/src/main/java
-  - remote: buf.build/connectrpc/java
     out: out/java/src/main/java
 
   # Rust
   - remote: buf.build/community/neoeinstein-prost
-    out: out/rust/src/proto
-  - remote: buf.build/community/neoeinstein-tonic
     out: out/rust/src/proto
 
   # Ruby

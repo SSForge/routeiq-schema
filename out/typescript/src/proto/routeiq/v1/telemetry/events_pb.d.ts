@@ -163,21 +163,64 @@ export declare type AgentEvent = Message<"routeiq.v1.telemetry.AgentEvent"> & {
     case: "task";
   } | {
     /**
-     * Phase 2 payloads — field numbers reserved for forward compat:
-     * StepEvent step = 101;
-     * DecisionEvent decision = 102;
-     * RetrievalEvent retrieval = 104;
-     * MemoryEvent memory = 105;
-     * HandoffEvent handoff = 106;
-     * PolicyEvent policy = 107;
-     * InterventionEvent intervention = 108;
-     * RecoveryEvent recovery = 109;
-     * StateSnapshotEvent state_snapshot = 110;
-     *
+     * @generated from field: routeiq.v1.telemetry.StepEvent step = 101;
+     */
+    value: StepEvent;
+    case: "step";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.DecisionEvent decision = 102;
+     */
+    value: DecisionEvent;
+    case: "decision";
+  } | {
+    /**
      * @generated from field: routeiq.v1.telemetry.ToolCallEvent tool_call = 103;
      */
     value: ToolCallEvent;
     case: "toolCall";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.RetrievalEvent retrieval = 104;
+     */
+    value: RetrievalEvent;
+    case: "retrieval";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.MemoryEvent memory = 105;
+     */
+    value: MemoryEvent;
+    case: "memory";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.HandoffEvent handoff = 106;
+     */
+    value: HandoffEvent;
+    case: "handoff";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.PolicyEvent policy = 107;
+     */
+    value: PolicyEvent;
+    case: "policy";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.InterventionEvent intervention = 108;
+     */
+    value: InterventionEvent;
+    case: "intervention";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.RecoveryEvent recovery = 109;
+     */
+    value: RecoveryEvent;
+    case: "recovery";
+  } | {
+    /**
+     * @generated from field: routeiq.v1.telemetry.StateSnapshotEvent state_snapshot = 110;
+     */
+    value: StateSnapshotEvent;
+    case: "stateSnapshot";
   } | { case: undefined; value?: undefined };
 };
 
@@ -327,6 +370,373 @@ export declare type ToolCallEvent = Message<"routeiq.v1.telemetry.ToolCallEvent"
  * Use `create(ToolCallEventSchema)` to create a new message.
  */
 export declare const ToolCallEventSchema: GenMessage<ToolCallEvent>;
+
+/**
+ * StepEvent captures the outcome of a single reasoning step within a task run.
+ *
+ * @generated from message routeiq.v1.telemetry.StepEvent
+ */
+export declare type StepEvent = Message<"routeiq.v1.telemetry.StepEvent"> & {
+  /**
+   * @generated from field: string selected_action = 1;
+   */
+  selectedAction: string;
+
+  /**
+   * @generated from field: string action_rationale = 2;
+   */
+  actionRationale: string;
+
+  /**
+   * @generated from field: routeiq.v1.telemetry.CompletionStatus completion_status = 3;
+   */
+  completionStatus: CompletionStatus;
+
+  /**
+   * @generated from field: routeiq.v1.telemetry.FailureCategory failure_category = 4;
+   */
+  failureCategory: FailureCategory;
+
+  /**
+   * @generated from field: int32 step_index = 5;
+   */
+  stepIndex: number;
+
+  /**
+   * @generated from field: int32 retry_count = 6;
+   */
+  retryCount: number;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.StepEvent.
+ * Use `create(StepEventSchema)` to create a new message.
+ */
+export declare const StepEventSchema: GenMessage<StepEvent>;
+
+/**
+ * DecisionEvent records a branching decision point — which path or tool the agent chose.
+ *
+ * @generated from message routeiq.v1.telemetry.DecisionEvent
+ */
+export declare type DecisionEvent = Message<"routeiq.v1.telemetry.DecisionEvent"> & {
+  /**
+   * "tool_selection" | "path_choice" | "escalation_check"
+   *
+   * @generated from field: string decision_type = 1;
+   */
+  decisionType: string;
+
+  /**
+   * JSON or natural-language summary of alternatives
+   *
+   * @generated from field: string options_considered = 2;
+   */
+  optionsConsidered: string;
+
+  /**
+   * @generated from field: string chosen_option = 3;
+   */
+  chosenOption: string;
+
+  /**
+   * @generated from field: string rationale = 4;
+   */
+  rationale: string;
+
+  /**
+   * 0.0–1.0 model-reported confidence
+   *
+   * @generated from field: double confidence = 5;
+   */
+  confidence: number;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.DecisionEvent.
+ * Use `create(DecisionEventSchema)` to create a new message.
+ */
+export declare const DecisionEventSchema: GenMessage<DecisionEvent>;
+
+/**
+ * RetrievalEvent records a RAG, search, or knowledge-base lookup.
+ *
+ * @generated from message routeiq.v1.telemetry.RetrievalEvent
+ */
+export declare type RetrievalEvent = Message<"routeiq.v1.telemetry.RetrievalEvent"> & {
+  /**
+   * "vector" | "keyword" | "hybrid" | "graph"
+   *
+   * @generated from field: string retrieval_type = 1;
+   */
+  retrievalType: string;
+
+  /**
+   * sanitized query — PII redacted by collector
+   *
+   * @generated from field: string query_summary = 2;
+   */
+  querySummary: string;
+
+  /**
+   * @generated from field: int32 results_count = 3;
+   */
+  resultsCount: number;
+
+  /**
+   * @generated from field: double top_score = 4;
+   */
+  topScore: number;
+
+  /**
+   * true if result was served from cache
+   *
+   * @generated from field: bool cache_hit = 5;
+   */
+  cacheHit: boolean;
+
+  /**
+   * @generated from field: double latency_ms = 6;
+   */
+  latencyMs: number;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.RetrievalEvent.
+ * Use `create(RetrievalEventSchema)` to create a new message.
+ */
+export declare const RetrievalEventSchema: GenMessage<RetrievalEvent>;
+
+/**
+ * MemoryEvent records a read or write to the agent's memory store.
+ *
+ * @generated from message routeiq.v1.telemetry.MemoryEvent
+ */
+export declare type MemoryEvent = Message<"routeiq.v1.telemetry.MemoryEvent"> & {
+  /**
+   * "short_term" | "long_term" | "episodic" | "semantic"
+   *
+   * @generated from field: string memory_type = 1;
+   */
+  memoryType: string;
+
+  /**
+   * "read" | "write" | "delete" | "search"
+   *
+   * @generated from field: string operation = 2;
+   */
+  operation: string;
+
+  /**
+   * sanitized key/description — PII redacted by collector
+   *
+   * @generated from field: string key_summary = 3;
+   */
+  keySummary: string;
+
+  /**
+   * @generated from field: int32 entries_affected = 4;
+   */
+  entriesAffected: number;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.MemoryEvent.
+ * Use `create(MemoryEventSchema)` to create a new message.
+ */
+export declare const MemoryEventSchema: GenMessage<MemoryEvent>;
+
+/**
+ * HandoffEvent records an agent-to-agent delegation of a task or sub-task.
+ *
+ * @generated from message routeiq.v1.telemetry.HandoffEvent
+ */
+export declare type HandoffEvent = Message<"routeiq.v1.telemetry.HandoffEvent"> & {
+  /**
+   * @generated from field: string from_agent_id = 1;
+   */
+  fromAgentId: string;
+
+  /**
+   * @generated from field: string to_agent_id = 2;
+   */
+  toAgentId: string;
+
+  /**
+   * @generated from field: string handoff_reason = 3;
+   */
+  handoffReason: string;
+
+  /**
+   * COMPLETED = handoff accepted; FAILURE = rejected
+   *
+   * @generated from field: routeiq.v1.telemetry.CompletionStatus status = 4;
+   */
+  status: CompletionStatus;
+
+  /**
+   * sanitized summary of context passed to receiving agent
+   *
+   * @generated from field: string context_summary = 5;
+   */
+  contextSummary: string;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.HandoffEvent.
+ * Use `create(HandoffEventSchema)` to create a new message.
+ */
+export declare const HandoffEventSchema: GenMessage<HandoffEvent>;
+
+/**
+ * PolicyEvent records the evaluation of a policy bundle against a proposed action.
+ *
+ * @generated from message routeiq.v1.telemetry.PolicyEvent
+ */
+export declare type PolicyEvent = Message<"routeiq.v1.telemetry.PolicyEvent"> & {
+  /**
+   * @generated from field: string policy_id = 1;
+   */
+  policyId: string;
+
+  /**
+   * @generated from field: string bundle_version = 2;
+   */
+  bundleVersion: string;
+
+  /**
+   * @generated from field: string action_evaluated = 3;
+   */
+  actionEvaluated: string;
+
+  /**
+   * "allow" | "block" | "require_approval"
+   *
+   * @generated from field: string verdict = 4;
+   */
+  verdict: string;
+
+  /**
+   * IDs of individual rules that fired
+   *
+   * @generated from field: repeated string rules_triggered = 5;
+   */
+  rulesTriggered: string[];
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.PolicyEvent.
+ * Use `create(PolicyEventSchema)` to create a new message.
+ */
+export declare const PolicyEventSchema: GenMessage<PolicyEvent>;
+
+/**
+ * InterventionEvent records a system or human intervention that interrupted normal agent flow.
+ *
+ * @generated from message routeiq.v1.telemetry.InterventionEvent
+ */
+export declare type InterventionEvent = Message<"routeiq.v1.telemetry.InterventionEvent"> & {
+  /**
+   * "circuit_break" | "rollback" | "escalate_human" | "model_swap" | "autonomy_downgrade"
+   *
+   * @generated from field: string intervention_type = 1;
+   */
+  interventionType: string;
+
+  /**
+   * @generated from field: string trigger_reason = 2;
+   */
+  triggerReason: string;
+
+  /**
+   * metric that breached threshold, if system-triggered
+   *
+   * @generated from field: string trigger_metric_id = 3;
+   */
+  triggerMetricId: string;
+
+  /**
+   * true = system-triggered; false = human-triggered
+   *
+   * @generated from field: bool automated = 4;
+   */
+  automated: boolean;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.InterventionEvent.
+ * Use `create(InterventionEventSchema)` to create a new message.
+ */
+export declare const InterventionEventSchema: GenMessage<InterventionEvent>;
+
+/**
+ * RecoveryEvent records a recovery attempt following a failure or intervention.
+ *
+ * @generated from message routeiq.v1.telemetry.RecoveryEvent
+ */
+export declare type RecoveryEvent = Message<"routeiq.v1.telemetry.RecoveryEvent"> & {
+  /**
+   * "retry" | "fallback" | "rollback" | "restart"
+   *
+   * @generated from field: string recovery_type = 1;
+   */
+  recoveryType: string;
+
+  /**
+   * error code or short description of what failed
+   *
+   * @generated from field: string from_error = 2;
+   */
+  fromError: string;
+
+  /**
+   * @generated from field: bool succeeded = 3;
+   */
+  succeeded: boolean;
+
+  /**
+   * 1-indexed; >1 means this is a retry
+   *
+   * @generated from field: int32 attempt_number = 4;
+   */
+  attemptNumber: number;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.RecoveryEvent.
+ * Use `create(RecoveryEventSchema)` to create a new message.
+ */
+export declare const RecoveryEventSchema: GenMessage<RecoveryEvent>;
+
+/**
+ * StateSnapshotEvent records a point-in-time capture of agent working state.
+ *
+ * @generated from message routeiq.v1.telemetry.StateSnapshotEvent
+ */
+export declare type StateSnapshotEvent = Message<"routeiq.v1.telemetry.StateSnapshotEvent"> & {
+  /**
+   * "checkpoint" | "pre_tool" | "post_tool" | "on_error"
+   *
+   * @generated from field: string snapshot_type = 1;
+   */
+  snapshotType: string;
+
+  /**
+   * @generated from field: int64 state_size_bytes = 2;
+   */
+  stateSizeBytes: bigint;
+
+  /**
+   * @generated from field: string snapshot_id = 3;
+   */
+  snapshotId: string;
+};
+
+/**
+ * Describes the message routeiq.v1.telemetry.StateSnapshotEvent.
+ * Use `create(StateSnapshotEventSchema)` to create a new message.
+ */
+export declare const StateSnapshotEventSchema: GenMessage<StateSnapshotEvent>;
 
 /**
  * @generated from enum routeiq.v1.telemetry.EventType

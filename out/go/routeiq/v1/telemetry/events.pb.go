@@ -240,7 +240,16 @@ type AgentEvent struct {
 	// Types that are valid to be assigned to Payload:
 	//
 	//	*AgentEvent_Task
+	//	*AgentEvent_Step
+	//	*AgentEvent_Decision
 	//	*AgentEvent_ToolCall
+	//	*AgentEvent_Retrieval
+	//	*AgentEvent_Memory
+	//	*AgentEvent_Handoff
+	//	*AgentEvent_Policy
+	//	*AgentEvent_Intervention
+	//	*AgentEvent_Recovery
+	//	*AgentEvent_StateSnapshot
 	Payload       isAgentEvent_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -404,10 +413,91 @@ func (x *AgentEvent) GetTask() *TaskEvent {
 	return nil
 }
 
+func (x *AgentEvent) GetStep() *StepEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Step); ok {
+			return x.Step
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetDecision() *DecisionEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Decision); ok {
+			return x.Decision
+		}
+	}
+	return nil
+}
+
 func (x *AgentEvent) GetToolCall() *ToolCallEvent {
 	if x != nil {
 		if x, ok := x.Payload.(*AgentEvent_ToolCall); ok {
 			return x.ToolCall
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetRetrieval() *RetrievalEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Retrieval); ok {
+			return x.Retrieval
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetMemory() *MemoryEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Memory); ok {
+			return x.Memory
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetHandoff() *HandoffEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Handoff); ok {
+			return x.Handoff
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetPolicy() *PolicyEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Policy); ok {
+			return x.Policy
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetIntervention() *InterventionEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Intervention); ok {
+			return x.Intervention
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetRecovery() *RecoveryEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_Recovery); ok {
+			return x.Recovery
+		}
+	}
+	return nil
+}
+
+func (x *AgentEvent) GetStateSnapshot() *StateSnapshotEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentEvent_StateSnapshot); ok {
+			return x.StateSnapshot
 		}
 	}
 	return nil
@@ -421,13 +511,67 @@ type AgentEvent_Task struct {
 	Task *TaskEvent `protobuf:"bytes,100,opt,name=task,proto3,oneof"`
 }
 
+type AgentEvent_Step struct {
+	Step *StepEvent `protobuf:"bytes,101,opt,name=step,proto3,oneof"`
+}
+
+type AgentEvent_Decision struct {
+	Decision *DecisionEvent `protobuf:"bytes,102,opt,name=decision,proto3,oneof"`
+}
+
 type AgentEvent_ToolCall struct {
 	ToolCall *ToolCallEvent `protobuf:"bytes,103,opt,name=tool_call,json=toolCall,proto3,oneof"`
 }
 
+type AgentEvent_Retrieval struct {
+	Retrieval *RetrievalEvent `protobuf:"bytes,104,opt,name=retrieval,proto3,oneof"`
+}
+
+type AgentEvent_Memory struct {
+	Memory *MemoryEvent `protobuf:"bytes,105,opt,name=memory,proto3,oneof"`
+}
+
+type AgentEvent_Handoff struct {
+	Handoff *HandoffEvent `protobuf:"bytes,106,opt,name=handoff,proto3,oneof"`
+}
+
+type AgentEvent_Policy struct {
+	Policy *PolicyEvent `protobuf:"bytes,107,opt,name=policy,proto3,oneof"`
+}
+
+type AgentEvent_Intervention struct {
+	Intervention *InterventionEvent `protobuf:"bytes,108,opt,name=intervention,proto3,oneof"`
+}
+
+type AgentEvent_Recovery struct {
+	Recovery *RecoveryEvent `protobuf:"bytes,109,opt,name=recovery,proto3,oneof"`
+}
+
+type AgentEvent_StateSnapshot struct {
+	StateSnapshot *StateSnapshotEvent `protobuf:"bytes,110,opt,name=state_snapshot,json=stateSnapshot,proto3,oneof"`
+}
+
 func (*AgentEvent_Task) isAgentEvent_Payload() {}
 
+func (*AgentEvent_Step) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Decision) isAgentEvent_Payload() {}
+
 func (*AgentEvent_ToolCall) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Retrieval) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Memory) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Handoff) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Policy) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Intervention) isAgentEvent_Payload() {}
+
+func (*AgentEvent_Recovery) isAgentEvent_Payload() {}
+
+func (*AgentEvent_StateSnapshot) isAgentEvent_Payload() {}
 
 // TaskEvent carries the outcome of a complete agent task.
 type TaskEvent struct {
@@ -687,6 +831,675 @@ func (x *ToolCallEvent) GetResultQualityFlags() []string {
 	return nil
 }
 
+// StepEvent captures the outcome of a single reasoning step within a task run.
+type StepEvent struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SelectedAction   string                 `protobuf:"bytes,1,opt,name=selected_action,json=selectedAction,proto3" json:"selected_action,omitempty"`
+	ActionRationale  string                 `protobuf:"bytes,2,opt,name=action_rationale,json=actionRationale,proto3" json:"action_rationale,omitempty"`
+	CompletionStatus CompletionStatus       `protobuf:"varint,3,opt,name=completion_status,json=completionStatus,proto3,enum=routeiq.v1.telemetry.CompletionStatus" json:"completion_status,omitempty"`
+	FailureCategory  FailureCategory        `protobuf:"varint,4,opt,name=failure_category,json=failureCategory,proto3,enum=routeiq.v1.telemetry.FailureCategory" json:"failure_category,omitempty"`
+	StepIndex        int32                  `protobuf:"varint,5,opt,name=step_index,json=stepIndex,proto3" json:"step_index,omitempty"`
+	RetryCount       int32                  `protobuf:"varint,6,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *StepEvent) Reset() {
+	*x = StepEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StepEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StepEvent) ProtoMessage() {}
+
+func (x *StepEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StepEvent.ProtoReflect.Descriptor instead.
+func (*StepEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *StepEvent) GetSelectedAction() string {
+	if x != nil {
+		return x.SelectedAction
+	}
+	return ""
+}
+
+func (x *StepEvent) GetActionRationale() string {
+	if x != nil {
+		return x.ActionRationale
+	}
+	return ""
+}
+
+func (x *StepEvent) GetCompletionStatus() CompletionStatus {
+	if x != nil {
+		return x.CompletionStatus
+	}
+	return CompletionStatus_COMPLETION_STATUS_UNSPECIFIED
+}
+
+func (x *StepEvent) GetFailureCategory() FailureCategory {
+	if x != nil {
+		return x.FailureCategory
+	}
+	return FailureCategory_FAILURE_CATEGORY_UNSPECIFIED
+}
+
+func (x *StepEvent) GetStepIndex() int32 {
+	if x != nil {
+		return x.StepIndex
+	}
+	return 0
+}
+
+func (x *StepEvent) GetRetryCount() int32 {
+	if x != nil {
+		return x.RetryCount
+	}
+	return 0
+}
+
+// DecisionEvent records a branching decision point — which path or tool the agent chose.
+type DecisionEvent struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	DecisionType      string                 `protobuf:"bytes,1,opt,name=decision_type,json=decisionType,proto3" json:"decision_type,omitempty"`                // "tool_selection" | "path_choice" | "escalation_check"
+	OptionsConsidered string                 `protobuf:"bytes,2,opt,name=options_considered,json=optionsConsidered,proto3" json:"options_considered,omitempty"` // JSON or natural-language summary of alternatives
+	ChosenOption      string                 `protobuf:"bytes,3,opt,name=chosen_option,json=chosenOption,proto3" json:"chosen_option,omitempty"`
+	Rationale         string                 `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Confidence        float64                `protobuf:"fixed64,5,opt,name=confidence,proto3" json:"confidence,omitempty"` // 0.0–1.0 model-reported confidence
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *DecisionEvent) Reset() {
+	*x = DecisionEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecisionEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecisionEvent) ProtoMessage() {}
+
+func (x *DecisionEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecisionEvent.ProtoReflect.Descriptor instead.
+func (*DecisionEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DecisionEvent) GetDecisionType() string {
+	if x != nil {
+		return x.DecisionType
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetOptionsConsidered() string {
+	if x != nil {
+		return x.OptionsConsidered
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetChosenOption() string {
+	if x != nil {
+		return x.ChosenOption
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetConfidence() float64 {
+	if x != nil {
+		return x.Confidence
+	}
+	return 0
+}
+
+// RetrievalEvent records a RAG, search, or knowledge-base lookup.
+type RetrievalEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RetrievalType string                 `protobuf:"bytes,1,opt,name=retrieval_type,json=retrievalType,proto3" json:"retrieval_type,omitempty"` // "vector" | "keyword" | "hybrid" | "graph"
+	QuerySummary  string                 `protobuf:"bytes,2,opt,name=query_summary,json=querySummary,proto3" json:"query_summary,omitempty"`    // sanitized query — PII redacted by collector
+	ResultsCount  int32                  `protobuf:"varint,3,opt,name=results_count,json=resultsCount,proto3" json:"results_count,omitempty"`
+	TopScore      float64                `protobuf:"fixed64,4,opt,name=top_score,json=topScore,proto3" json:"top_score,omitempty"`
+	CacheHit      bool                   `protobuf:"varint,5,opt,name=cache_hit,json=cacheHit,proto3" json:"cache_hit,omitempty"` // true if result was served from cache
+	LatencyMs     float64                `protobuf:"fixed64,6,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetrievalEvent) Reset() {
+	*x = RetrievalEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetrievalEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetrievalEvent) ProtoMessage() {}
+
+func (x *RetrievalEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetrievalEvent.ProtoReflect.Descriptor instead.
+func (*RetrievalEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RetrievalEvent) GetRetrievalType() string {
+	if x != nil {
+		return x.RetrievalType
+	}
+	return ""
+}
+
+func (x *RetrievalEvent) GetQuerySummary() string {
+	if x != nil {
+		return x.QuerySummary
+	}
+	return ""
+}
+
+func (x *RetrievalEvent) GetResultsCount() int32 {
+	if x != nil {
+		return x.ResultsCount
+	}
+	return 0
+}
+
+func (x *RetrievalEvent) GetTopScore() float64 {
+	if x != nil {
+		return x.TopScore
+	}
+	return 0
+}
+
+func (x *RetrievalEvent) GetCacheHit() bool {
+	if x != nil {
+		return x.CacheHit
+	}
+	return false
+}
+
+func (x *RetrievalEvent) GetLatencyMs() float64 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+// MemoryEvent records a read or write to the agent's memory store.
+type MemoryEvent struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MemoryType      string                 `protobuf:"bytes,1,opt,name=memory_type,json=memoryType,proto3" json:"memory_type,omitempty"` // "short_term" | "long_term" | "episodic" | "semantic"
+	Operation       string                 `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`                     // "read" | "write" | "delete" | "search"
+	KeySummary      string                 `protobuf:"bytes,3,opt,name=key_summary,json=keySummary,proto3" json:"key_summary,omitempty"` // sanitized key/description — PII redacted by collector
+	EntriesAffected int32                  `protobuf:"varint,4,opt,name=entries_affected,json=entriesAffected,proto3" json:"entries_affected,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *MemoryEvent) Reset() {
+	*x = MemoryEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MemoryEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MemoryEvent) ProtoMessage() {}
+
+func (x *MemoryEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MemoryEvent.ProtoReflect.Descriptor instead.
+func (*MemoryEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MemoryEvent) GetMemoryType() string {
+	if x != nil {
+		return x.MemoryType
+	}
+	return ""
+}
+
+func (x *MemoryEvent) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+func (x *MemoryEvent) GetKeySummary() string {
+	if x != nil {
+		return x.KeySummary
+	}
+	return ""
+}
+
+func (x *MemoryEvent) GetEntriesAffected() int32 {
+	if x != nil {
+		return x.EntriesAffected
+	}
+	return 0
+}
+
+// HandoffEvent records an agent-to-agent delegation of a task or sub-task.
+type HandoffEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	FromAgentId    string                 `protobuf:"bytes,1,opt,name=from_agent_id,json=fromAgentId,proto3" json:"from_agent_id,omitempty"`
+	ToAgentId      string                 `protobuf:"bytes,2,opt,name=to_agent_id,json=toAgentId,proto3" json:"to_agent_id,omitempty"`
+	HandoffReason  string                 `protobuf:"bytes,3,opt,name=handoff_reason,json=handoffReason,proto3" json:"handoff_reason,omitempty"`
+	Status         CompletionStatus       `protobuf:"varint,4,opt,name=status,proto3,enum=routeiq.v1.telemetry.CompletionStatus" json:"status,omitempty"` // COMPLETED = handoff accepted; FAILURE = rejected
+	ContextSummary string                 `protobuf:"bytes,5,opt,name=context_summary,json=contextSummary,proto3" json:"context_summary,omitempty"`       // sanitized summary of context passed to receiving agent
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *HandoffEvent) Reset() {
+	*x = HandoffEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandoffEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandoffEvent) ProtoMessage() {}
+
+func (x *HandoffEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandoffEvent.ProtoReflect.Descriptor instead.
+func (*HandoffEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *HandoffEvent) GetFromAgentId() string {
+	if x != nil {
+		return x.FromAgentId
+	}
+	return ""
+}
+
+func (x *HandoffEvent) GetToAgentId() string {
+	if x != nil {
+		return x.ToAgentId
+	}
+	return ""
+}
+
+func (x *HandoffEvent) GetHandoffReason() string {
+	if x != nil {
+		return x.HandoffReason
+	}
+	return ""
+}
+
+func (x *HandoffEvent) GetStatus() CompletionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return CompletionStatus_COMPLETION_STATUS_UNSPECIFIED
+}
+
+func (x *HandoffEvent) GetContextSummary() string {
+	if x != nil {
+		return x.ContextSummary
+	}
+	return ""
+}
+
+// PolicyEvent records the evaluation of a policy bundle against a proposed action.
+type PolicyEvent struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PolicyId        string                 `protobuf:"bytes,1,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	BundleVersion   string                 `protobuf:"bytes,2,opt,name=bundle_version,json=bundleVersion,proto3" json:"bundle_version,omitempty"`
+	ActionEvaluated string                 `protobuf:"bytes,3,opt,name=action_evaluated,json=actionEvaluated,proto3" json:"action_evaluated,omitempty"`
+	Verdict         string                 `protobuf:"bytes,4,opt,name=verdict,proto3" json:"verdict,omitempty"`                                     // "allow" | "block" | "require_approval"
+	RulesTriggered  []string               `protobuf:"bytes,5,rep,name=rules_triggered,json=rulesTriggered,proto3" json:"rules_triggered,omitempty"` // IDs of individual rules that fired
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PolicyEvent) Reset() {
+	*x = PolicyEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PolicyEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PolicyEvent) ProtoMessage() {}
+
+func (x *PolicyEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PolicyEvent.ProtoReflect.Descriptor instead.
+func (*PolicyEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PolicyEvent) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *PolicyEvent) GetBundleVersion() string {
+	if x != nil {
+		return x.BundleVersion
+	}
+	return ""
+}
+
+func (x *PolicyEvent) GetActionEvaluated() string {
+	if x != nil {
+		return x.ActionEvaluated
+	}
+	return ""
+}
+
+func (x *PolicyEvent) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *PolicyEvent) GetRulesTriggered() []string {
+	if x != nil {
+		return x.RulesTriggered
+	}
+	return nil
+}
+
+// InterventionEvent records a system or human intervention that interrupted normal agent flow.
+type InterventionEvent struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	InterventionType string                 `protobuf:"bytes,1,opt,name=intervention_type,json=interventionType,proto3" json:"intervention_type,omitempty"` // "circuit_break" | "rollback" | "escalate_human" | "model_swap" | "autonomy_downgrade"
+	TriggerReason    string                 `protobuf:"bytes,2,opt,name=trigger_reason,json=triggerReason,proto3" json:"trigger_reason,omitempty"`
+	TriggerMetricId  string                 `protobuf:"bytes,3,opt,name=trigger_metric_id,json=triggerMetricId,proto3" json:"trigger_metric_id,omitempty"` // metric that breached threshold, if system-triggered
+	Automated        bool                   `protobuf:"varint,4,opt,name=automated,proto3" json:"automated,omitempty"`                                     // true = system-triggered; false = human-triggered
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *InterventionEvent) Reset() {
+	*x = InterventionEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InterventionEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InterventionEvent) ProtoMessage() {}
+
+func (x *InterventionEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InterventionEvent.ProtoReflect.Descriptor instead.
+func (*InterventionEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *InterventionEvent) GetInterventionType() string {
+	if x != nil {
+		return x.InterventionType
+	}
+	return ""
+}
+
+func (x *InterventionEvent) GetTriggerReason() string {
+	if x != nil {
+		return x.TriggerReason
+	}
+	return ""
+}
+
+func (x *InterventionEvent) GetTriggerMetricId() string {
+	if x != nil {
+		return x.TriggerMetricId
+	}
+	return ""
+}
+
+func (x *InterventionEvent) GetAutomated() bool {
+	if x != nil {
+		return x.Automated
+	}
+	return false
+}
+
+// RecoveryEvent records a recovery attempt following a failure or intervention.
+type RecoveryEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RecoveryType  string                 `protobuf:"bytes,1,opt,name=recovery_type,json=recoveryType,proto3" json:"recovery_type,omitempty"` // "retry" | "fallback" | "rollback" | "restart"
+	FromError     string                 `protobuf:"bytes,2,opt,name=from_error,json=fromError,proto3" json:"from_error,omitempty"`          // error code or short description of what failed
+	Succeeded     bool                   `protobuf:"varint,3,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	AttemptNumber int32                  `protobuf:"varint,4,opt,name=attempt_number,json=attemptNumber,proto3" json:"attempt_number,omitempty"` // 1-indexed; >1 means this is a retry
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoveryEvent) Reset() {
+	*x = RecoveryEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryEvent) ProtoMessage() {}
+
+func (x *RecoveryEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryEvent.ProtoReflect.Descriptor instead.
+func (*RecoveryEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RecoveryEvent) GetRecoveryType() string {
+	if x != nil {
+		return x.RecoveryType
+	}
+	return ""
+}
+
+func (x *RecoveryEvent) GetFromError() string {
+	if x != nil {
+		return x.FromError
+	}
+	return ""
+}
+
+func (x *RecoveryEvent) GetSucceeded() bool {
+	if x != nil {
+		return x.Succeeded
+	}
+	return false
+}
+
+func (x *RecoveryEvent) GetAttemptNumber() int32 {
+	if x != nil {
+		return x.AttemptNumber
+	}
+	return 0
+}
+
+// StateSnapshotEvent records a point-in-time capture of agent working state.
+type StateSnapshotEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SnapshotType   string                 `protobuf:"bytes,1,opt,name=snapshot_type,json=snapshotType,proto3" json:"snapshot_type,omitempty"` // "checkpoint" | "pre_tool" | "post_tool" | "on_error"
+	StateSizeBytes int64                  `protobuf:"varint,2,opt,name=state_size_bytes,json=stateSizeBytes,proto3" json:"state_size_bytes,omitempty"`
+	SnapshotId     string                 `protobuf:"bytes,3,opt,name=snapshot_id,json=snapshotId,proto3" json:"snapshot_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *StateSnapshotEvent) Reset() {
+	*x = StateSnapshotEvent{}
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StateSnapshotEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StateSnapshotEvent) ProtoMessage() {}
+
+func (x *StateSnapshotEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_routeiq_v1_telemetry_events_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StateSnapshotEvent.ProtoReflect.Descriptor instead.
+func (*StateSnapshotEvent) Descriptor() ([]byte, []int) {
+	return file_routeiq_v1_telemetry_events_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *StateSnapshotEvent) GetSnapshotType() string {
+	if x != nil {
+		return x.SnapshotType
+	}
+	return ""
+}
+
+func (x *StateSnapshotEvent) GetStateSizeBytes() int64 {
+	if x != nil {
+		return x.StateSizeBytes
+	}
+	return 0
+}
+
+func (x *StateSnapshotEvent) GetSnapshotId() string {
+	if x != nil {
+		return x.SnapshotId
+	}
+	return ""
+}
+
 var File_routeiq_v1_telemetry_events_proto protoreflect.FileDescriptor
 
 const file_routeiq_v1_telemetry_events_proto_rawDesc = "" +
@@ -701,7 +1514,8 @@ const file_routeiq_v1_telemetry_events_proto_rawDesc = "" +
 	"\x11toolchain_version\x18\x05 \x01(\tR\x10toolchainVersion\x12%\n" +
 	"\x0ememory_version\x18\x06 \x01(\tR\rmemoryVersion\x12+\n" +
 	"\x11retrieval_version\x18\a \x01(\tR\x10retrievalVersion\x122\n" +
-	"\x15policy_bundle_version\x18\b \x01(\tR\x13policyBundleVersion\"\x91\x06\n" +
+	"\x15policy_bundle_version\x18\b \x01(\tR\x13policyBundleVersion\"\xf0\n" +
+	"\n" +
 	"\n" +
 	"AgentEvent\x12\x19\n" +
 	"\btrace_id\x18\x01 \x01(\fR\atraceId\x12\x17\n" +
@@ -724,8 +1538,17 @@ const file_routeiq_v1_telemetry_events_proto_rawDesc = "" +
 	"\bversions\x18\x0e \x01(\v2$.routeiq.v1.telemetry.VersionLineageR\bversions\x12G\n" +
 	"\rautonomy_mode\x18\x0f \x01(\x0e2\".routeiq.v1.telemetry.AutonomyModeR\fautonomyMode\x12;\n" +
 	"\trisk_tier\x18\x10 \x01(\x0e2\x1e.routeiq.v1.telemetry.RiskTierR\briskTier\x125\n" +
-	"\x04task\x18d \x01(\v2\x1f.routeiq.v1.telemetry.TaskEventH\x00R\x04task\x12B\n" +
-	"\ttool_call\x18g \x01(\v2#.routeiq.v1.telemetry.ToolCallEventH\x00R\btoolCallB\t\n" +
+	"\x04task\x18d \x01(\v2\x1f.routeiq.v1.telemetry.TaskEventH\x00R\x04task\x125\n" +
+	"\x04step\x18e \x01(\v2\x1f.routeiq.v1.telemetry.StepEventH\x00R\x04step\x12A\n" +
+	"\bdecision\x18f \x01(\v2#.routeiq.v1.telemetry.DecisionEventH\x00R\bdecision\x12B\n" +
+	"\ttool_call\x18g \x01(\v2#.routeiq.v1.telemetry.ToolCallEventH\x00R\btoolCall\x12D\n" +
+	"\tretrieval\x18h \x01(\v2$.routeiq.v1.telemetry.RetrievalEventH\x00R\tretrieval\x12;\n" +
+	"\x06memory\x18i \x01(\v2!.routeiq.v1.telemetry.MemoryEventH\x00R\x06memory\x12>\n" +
+	"\ahandoff\x18j \x01(\v2\".routeiq.v1.telemetry.HandoffEventH\x00R\ahandoff\x12;\n" +
+	"\x06policy\x18k \x01(\v2!.routeiq.v1.telemetry.PolicyEventH\x00R\x06policy\x12M\n" +
+	"\fintervention\x18l \x01(\v2'.routeiq.v1.telemetry.InterventionEventH\x00R\fintervention\x12A\n" +
+	"\brecovery\x18m \x01(\v2#.routeiq.v1.telemetry.RecoveryEventH\x00R\brecovery\x12Q\n" +
+	"\x0estate_snapshot\x18n \x01(\v2(.routeiq.v1.telemetry.StateSnapshotEventH\x00R\rstateSnapshotB\t\n" +
 	"\apayload\"\x84\x04\n" +
 	"\tTaskEvent\x12!\n" +
 	"\finput_intent\x18\x01 \x01(\tR\vinputIntent\x120\n" +
@@ -757,7 +1580,67 @@ const file_routeiq_v1_telemetry_events_proto_rawDesc = "" +
 	"error_code\x18\n" +
 	" \x01(\tR\terrorCode\x12%\n" +
 	"\x0eresult_summary\x18\v \x01(\tR\rresultSummary\x120\n" +
-	"\x14result_quality_flags\x18\f \x03(\tR\x12resultQualityFlags*\x8d\x03\n" +
+	"\x14result_quality_flags\x18\f \x03(\tR\x12resultQualityFlags\"\xc6\x02\n" +
+	"\tStepEvent\x12'\n" +
+	"\x0fselected_action\x18\x01 \x01(\tR\x0eselectedAction\x12)\n" +
+	"\x10action_rationale\x18\x02 \x01(\tR\x0factionRationale\x12S\n" +
+	"\x11completion_status\x18\x03 \x01(\x0e2&.routeiq.v1.telemetry.CompletionStatusR\x10completionStatus\x12P\n" +
+	"\x10failure_category\x18\x04 \x01(\x0e2%.routeiq.v1.telemetry.FailureCategoryR\x0ffailureCategory\x12\x1d\n" +
+	"\n" +
+	"step_index\x18\x05 \x01(\x05R\tstepIndex\x12\x1f\n" +
+	"\vretry_count\x18\x06 \x01(\x05R\n" +
+	"retryCount\"\xc6\x01\n" +
+	"\rDecisionEvent\x12#\n" +
+	"\rdecision_type\x18\x01 \x01(\tR\fdecisionType\x12-\n" +
+	"\x12options_considered\x18\x02 \x01(\tR\x11optionsConsidered\x12#\n" +
+	"\rchosen_option\x18\x03 \x01(\tR\fchosenOption\x12\x1c\n" +
+	"\trationale\x18\x04 \x01(\tR\trationale\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x05 \x01(\x01R\n" +
+	"confidence\"\xda\x01\n" +
+	"\x0eRetrievalEvent\x12%\n" +
+	"\x0eretrieval_type\x18\x01 \x01(\tR\rretrievalType\x12#\n" +
+	"\rquery_summary\x18\x02 \x01(\tR\fquerySummary\x12#\n" +
+	"\rresults_count\x18\x03 \x01(\x05R\fresultsCount\x12\x1b\n" +
+	"\ttop_score\x18\x04 \x01(\x01R\btopScore\x12\x1b\n" +
+	"\tcache_hit\x18\x05 \x01(\bR\bcacheHit\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\x06 \x01(\x01R\tlatencyMs\"\x98\x01\n" +
+	"\vMemoryEvent\x12\x1f\n" +
+	"\vmemory_type\x18\x01 \x01(\tR\n" +
+	"memoryType\x12\x1c\n" +
+	"\toperation\x18\x02 \x01(\tR\toperation\x12\x1f\n" +
+	"\vkey_summary\x18\x03 \x01(\tR\n" +
+	"keySummary\x12)\n" +
+	"\x10entries_affected\x18\x04 \x01(\x05R\x0fentriesAffected\"\xe2\x01\n" +
+	"\fHandoffEvent\x12\"\n" +
+	"\rfrom_agent_id\x18\x01 \x01(\tR\vfromAgentId\x12\x1e\n" +
+	"\vto_agent_id\x18\x02 \x01(\tR\ttoAgentId\x12%\n" +
+	"\x0ehandoff_reason\x18\x03 \x01(\tR\rhandoffReason\x12>\n" +
+	"\x06status\x18\x04 \x01(\x0e2&.routeiq.v1.telemetry.CompletionStatusR\x06status\x12'\n" +
+	"\x0fcontext_summary\x18\x05 \x01(\tR\x0econtextSummary\"\xbf\x01\n" +
+	"\vPolicyEvent\x12\x1b\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\bpolicyId\x12%\n" +
+	"\x0ebundle_version\x18\x02 \x01(\tR\rbundleVersion\x12)\n" +
+	"\x10action_evaluated\x18\x03 \x01(\tR\x0factionEvaluated\x12\x18\n" +
+	"\averdict\x18\x04 \x01(\tR\averdict\x12'\n" +
+	"\x0frules_triggered\x18\x05 \x03(\tR\x0erulesTriggered\"\xb1\x01\n" +
+	"\x11InterventionEvent\x12+\n" +
+	"\x11intervention_type\x18\x01 \x01(\tR\x10interventionType\x12%\n" +
+	"\x0etrigger_reason\x18\x02 \x01(\tR\rtriggerReason\x12*\n" +
+	"\x11trigger_metric_id\x18\x03 \x01(\tR\x0ftriggerMetricId\x12\x1c\n" +
+	"\tautomated\x18\x04 \x01(\bR\tautomated\"\x98\x01\n" +
+	"\rRecoveryEvent\x12#\n" +
+	"\rrecovery_type\x18\x01 \x01(\tR\frecoveryType\x12\x1d\n" +
+	"\n" +
+	"from_error\x18\x02 \x01(\tR\tfromError\x12\x1c\n" +
+	"\tsucceeded\x18\x03 \x01(\bR\tsucceeded\x12%\n" +
+	"\x0eattempt_number\x18\x04 \x01(\x05R\rattemptNumber\"\x84\x01\n" +
+	"\x12StateSnapshotEvent\x12#\n" +
+	"\rsnapshot_type\x18\x01 \x01(\tR\fsnapshotType\x12(\n" +
+	"\x10state_size_bytes\x18\x02 \x01(\x03R\x0estateSizeBytes\x12\x1f\n" +
+	"\vsnapshot_id\x18\x03 \x01(\tR\n" +
+	"snapshotId*\x8d\x03\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fTASK_STARTED\x10\x01\x12\x12\n" +
@@ -793,40 +1676,61 @@ func file_routeiq_v1_telemetry_events_proto_rawDescGZIP() []byte {
 }
 
 var file_routeiq_v1_telemetry_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_routeiq_v1_telemetry_events_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_routeiq_v1_telemetry_events_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_routeiq_v1_telemetry_events_proto_goTypes = []any{
 	(EventType)(0),                // 0: routeiq.v1.telemetry.EventType
 	(*VersionLineage)(nil),        // 1: routeiq.v1.telemetry.VersionLineage
 	(*AgentEvent)(nil),            // 2: routeiq.v1.telemetry.AgentEvent
 	(*TaskEvent)(nil),             // 3: routeiq.v1.telemetry.TaskEvent
 	(*ToolCallEvent)(nil),         // 4: routeiq.v1.telemetry.ToolCallEvent
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-	(AutonomyMode)(0),             // 6: routeiq.v1.telemetry.AutonomyMode
-	(RiskTier)(0),                 // 7: routeiq.v1.telemetry.RiskTier
-	(CompletionStatus)(0),         // 8: routeiq.v1.telemetry.CompletionStatus
-	(FailureCategory)(0),          // 9: routeiq.v1.telemetry.FailureCategory
-	(PermissionLevel)(0),          // 10: routeiq.v1.telemetry.PermissionLevel
-	(ToolResultStatus)(0),         // 11: routeiq.v1.telemetry.ToolResultStatus
+	(*StepEvent)(nil),             // 5: routeiq.v1.telemetry.StepEvent
+	(*DecisionEvent)(nil),         // 6: routeiq.v1.telemetry.DecisionEvent
+	(*RetrievalEvent)(nil),        // 7: routeiq.v1.telemetry.RetrievalEvent
+	(*MemoryEvent)(nil),           // 8: routeiq.v1.telemetry.MemoryEvent
+	(*HandoffEvent)(nil),          // 9: routeiq.v1.telemetry.HandoffEvent
+	(*PolicyEvent)(nil),           // 10: routeiq.v1.telemetry.PolicyEvent
+	(*InterventionEvent)(nil),     // 11: routeiq.v1.telemetry.InterventionEvent
+	(*RecoveryEvent)(nil),         // 12: routeiq.v1.telemetry.RecoveryEvent
+	(*StateSnapshotEvent)(nil),    // 13: routeiq.v1.telemetry.StateSnapshotEvent
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
+	(AutonomyMode)(0),             // 15: routeiq.v1.telemetry.AutonomyMode
+	(RiskTier)(0),                 // 16: routeiq.v1.telemetry.RiskTier
+	(CompletionStatus)(0),         // 17: routeiq.v1.telemetry.CompletionStatus
+	(FailureCategory)(0),          // 18: routeiq.v1.telemetry.FailureCategory
+	(PermissionLevel)(0),          // 19: routeiq.v1.telemetry.PermissionLevel
+	(ToolResultStatus)(0),         // 20: routeiq.v1.telemetry.ToolResultStatus
 }
 var file_routeiq_v1_telemetry_events_proto_depIdxs = []int32{
-	5,  // 0: routeiq.v1.telemetry.AgentEvent.timestamp:type_name -> google.protobuf.Timestamp
+	14, // 0: routeiq.v1.telemetry.AgentEvent.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 1: routeiq.v1.telemetry.AgentEvent.event_type:type_name -> routeiq.v1.telemetry.EventType
 	1,  // 2: routeiq.v1.telemetry.AgentEvent.versions:type_name -> routeiq.v1.telemetry.VersionLineage
-	6,  // 3: routeiq.v1.telemetry.AgentEvent.autonomy_mode:type_name -> routeiq.v1.telemetry.AutonomyMode
-	7,  // 4: routeiq.v1.telemetry.AgentEvent.risk_tier:type_name -> routeiq.v1.telemetry.RiskTier
+	15, // 3: routeiq.v1.telemetry.AgentEvent.autonomy_mode:type_name -> routeiq.v1.telemetry.AutonomyMode
+	16, // 4: routeiq.v1.telemetry.AgentEvent.risk_tier:type_name -> routeiq.v1.telemetry.RiskTier
 	3,  // 5: routeiq.v1.telemetry.AgentEvent.task:type_name -> routeiq.v1.telemetry.TaskEvent
-	4,  // 6: routeiq.v1.telemetry.AgentEvent.tool_call:type_name -> routeiq.v1.telemetry.ToolCallEvent
-	8,  // 7: routeiq.v1.telemetry.TaskEvent.completion_status:type_name -> routeiq.v1.telemetry.CompletionStatus
-	9,  // 8: routeiq.v1.telemetry.TaskEvent.failure_category:type_name -> routeiq.v1.telemetry.FailureCategory
-	10, // 9: routeiq.v1.telemetry.ToolCallEvent.permission_level:type_name -> routeiq.v1.telemetry.PermissionLevel
-	5,  // 10: routeiq.v1.telemetry.ToolCallEvent.start_time:type_name -> google.protobuf.Timestamp
-	5,  // 11: routeiq.v1.telemetry.ToolCallEvent.end_time:type_name -> google.protobuf.Timestamp
-	11, // 12: routeiq.v1.telemetry.ToolCallEvent.result_status:type_name -> routeiq.v1.telemetry.ToolResultStatus
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	5,  // 6: routeiq.v1.telemetry.AgentEvent.step:type_name -> routeiq.v1.telemetry.StepEvent
+	6,  // 7: routeiq.v1.telemetry.AgentEvent.decision:type_name -> routeiq.v1.telemetry.DecisionEvent
+	4,  // 8: routeiq.v1.telemetry.AgentEvent.tool_call:type_name -> routeiq.v1.telemetry.ToolCallEvent
+	7,  // 9: routeiq.v1.telemetry.AgentEvent.retrieval:type_name -> routeiq.v1.telemetry.RetrievalEvent
+	8,  // 10: routeiq.v1.telemetry.AgentEvent.memory:type_name -> routeiq.v1.telemetry.MemoryEvent
+	9,  // 11: routeiq.v1.telemetry.AgentEvent.handoff:type_name -> routeiq.v1.telemetry.HandoffEvent
+	10, // 12: routeiq.v1.telemetry.AgentEvent.policy:type_name -> routeiq.v1.telemetry.PolicyEvent
+	11, // 13: routeiq.v1.telemetry.AgentEvent.intervention:type_name -> routeiq.v1.telemetry.InterventionEvent
+	12, // 14: routeiq.v1.telemetry.AgentEvent.recovery:type_name -> routeiq.v1.telemetry.RecoveryEvent
+	13, // 15: routeiq.v1.telemetry.AgentEvent.state_snapshot:type_name -> routeiq.v1.telemetry.StateSnapshotEvent
+	17, // 16: routeiq.v1.telemetry.TaskEvent.completion_status:type_name -> routeiq.v1.telemetry.CompletionStatus
+	18, // 17: routeiq.v1.telemetry.TaskEvent.failure_category:type_name -> routeiq.v1.telemetry.FailureCategory
+	19, // 18: routeiq.v1.telemetry.ToolCallEvent.permission_level:type_name -> routeiq.v1.telemetry.PermissionLevel
+	14, // 19: routeiq.v1.telemetry.ToolCallEvent.start_time:type_name -> google.protobuf.Timestamp
+	14, // 20: routeiq.v1.telemetry.ToolCallEvent.end_time:type_name -> google.protobuf.Timestamp
+	20, // 21: routeiq.v1.telemetry.ToolCallEvent.result_status:type_name -> routeiq.v1.telemetry.ToolResultStatus
+	17, // 22: routeiq.v1.telemetry.StepEvent.completion_status:type_name -> routeiq.v1.telemetry.CompletionStatus
+	18, // 23: routeiq.v1.telemetry.StepEvent.failure_category:type_name -> routeiq.v1.telemetry.FailureCategory
+	17, // 24: routeiq.v1.telemetry.HandoffEvent.status:type_name -> routeiq.v1.telemetry.CompletionStatus
+	25, // [25:25] is the sub-list for method output_type
+	25, // [25:25] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_routeiq_v1_telemetry_events_proto_init() }
@@ -837,7 +1741,16 @@ func file_routeiq_v1_telemetry_events_proto_init() {
 	file_routeiq_v1_telemetry_entities_proto_init()
 	file_routeiq_v1_telemetry_events_proto_msgTypes[1].OneofWrappers = []any{
 		(*AgentEvent_Task)(nil),
+		(*AgentEvent_Step)(nil),
+		(*AgentEvent_Decision)(nil),
 		(*AgentEvent_ToolCall)(nil),
+		(*AgentEvent_Retrieval)(nil),
+		(*AgentEvent_Memory)(nil),
+		(*AgentEvent_Handoff)(nil),
+		(*AgentEvent_Policy)(nil),
+		(*AgentEvent_Intervention)(nil),
+		(*AgentEvent_Recovery)(nil),
+		(*AgentEvent_StateSnapshot)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -845,7 +1758,7 @@ func file_routeiq_v1_telemetry_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routeiq_v1_telemetry_events_proto_rawDesc), len(file_routeiq_v1_telemetry_events_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
