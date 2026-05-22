@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package routeiq.v1.telemetry;
+
+import "routeiq/v1/telemetry/entities.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/telemetry;telemetryv1";
+option java_outer_classname = "ConventionsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry";
+
+// SemanticConvention maps a typed proto field to its OTel span attribute key.
+// Read by the SDK code generator to emit the right attribute keys.
+// Read by routeiq_validator (collector component) to validate incoming spans.
+message SemanticConvention {
+  string proto_field_path = 1; // e.g. "TaskEvent.completion_status"
+  string otel_attribute_key = 2; // e.g. "routeiq.task.completion_status"
+  AttributeType type = 3;
+  bool required = 4;
+}
+
+// ConventionRegistry is the root message for conventions/telemetry.yaml.
+// Every AgentEvent field that appears on the wire must have an entry here.
+message ConventionRegistry {
+  repeated SemanticConvention conventions = 1;
+}
