@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package routeiq.v1.telemetry;
+
+import "google/protobuf/timestamp.proto";
+import "routeiq/v1/telemetry/entities.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/telemetry;telemetryv1";
+option java_outer_classname = "EventsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry";
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  TASK_STARTED = 1;
+  TASK_COMPLETED = 2;
+  TASK_FAILED = 3;
+  STEP_STARTED = 4;
+  STEP_COMPLETED = 5;
+  DECISION_MADE = 6;
+  TOOL_CALLED = 7;
+  TOOL_RETURNED = 8;
+  RETRIEVAL_PERFORMED = 9;
+  MEMORY_READ = 10;
+  MEMORY_WRITTEN = 11;
+  HANDOFF_INITIATED = 12;
+  HANDOFF_ACCEPTED = 13;
+  POLICY_EVALUATED = 14;
+  INTERVENTION_TRIGGERED = 15;
+  RECOVERY_ATTEMPTED = 16;
+  STATE_SNAPSHOT_CAPTURED = 17;
+}
+
+// VersionLineage carries the full software bill-of-materials for a run.
+message VersionLineage {
+  string agent_version = 1;
+  string model_name = 2;
+  string model_version = 3;
+  string prompt_version = 4;
+  string toolchain_version = 5;
+  string memory_version = 6;
+  string retrieval_version = 7;
+  string policy_bundle_version = 8;
+}
+
+// AgentEvent is the canonical envelope for every event emitted by an agent.
+// Maps to an OTel span with routeiq.* attributes (see conventions/telemetry.yaml).
+message AgentEvent {
+  bytes trace_id = 1;
+  bytes span_id = 2;
+  bytes parent_span_id = 3;
+  google.protobuf.Timestamp timestamp = 4;
+
+  EventType event_type = 5;
+  string tenant_id = 6;
+  string environment = 7;
+  string task_id = 8;
+  string run_id = 9;
+  string step_id = 10;
+  string agent_id = 11;
+  string agent_role = 12;
+  string workflow_id = 13;
+
+  VersionLineage versions = 14;
+  AutonomyMode autonomy_mode = 15;
+  RiskTier risk_tier = 16;
+
+  oneof payload {
+    TaskEvent task = 100;
+    ToolCallEvent tool_call = 103;
+    // Phase 2 payloads — field numbers reserved for forward compat:
+    // StepEvent step = 101;
+    // DecisionEvent decision = 102;
+    // RetrievalEvent retrieval = 104;
+    // MemoryEvent memory = 105;
+    // HandoffEvent handoff = 106;
+    // PolicyEvent policy = 107;
+    // InterventionEvent intervention = 108;
+    // RecoveryEvent recovery = 109;
+    // StateSnapshotEvent state_snapshot = 110;
+  }
+}
+
+// TaskEvent carries the outcome of a complete agent task.
+message TaskEvent {
+  string input_intent = 1;
+  string normalized_task_type = 2;
+  string expected_outcome = 3;
+  string actual_outcome = 4;
+  CompletionStatus completion_status = 5;
+  FailureCategory failure_category = 6;
+  double total_cost_usd = 7;
+  int64 total_tokens = 8;
+  bool human_escalated = 9;
+  bool rolled_back = 10;
+  string cohort = 11;
+}
+
+// ToolCallEvent records a single tool invocation within a step.
+message ToolCallEvent {
+  string tool_name = 1;
+  string tool_version = 2;
+  string arguments_hash = 3;
+  string arguments_summary = 4;
+  PermissionLevel permission_level = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  double latency_ms = 8;
+  ToolResultStatus result_status = 9;
+  string error_code = 10;
+  string result_summary = 11;
+  repeated string result_quality_flags = 12;
+}

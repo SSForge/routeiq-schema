@@ -3,8 +3,8 @@ syntax = "proto3";
 package routeiq.v1.telemetry;
 
 option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/telemetry;telemetryv1";
-option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry";
 option java_outer_classname = "EntitiesProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.telemetry";
 
 enum CompletionStatus {
   COMPLETION_STATUS_UNSPECIFIED = 0;
