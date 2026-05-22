@@ -1,0 +1,70 @@
+name: schema-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  buf:
+    name: Buf lint, format, breaking
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          version: 1.50.0
+          lint: true
+          format: true
+          breaking: true
+          breaking_against: "https://github.com/SSForge/routeiq-schema.git#branch=main"
+          push: false
+
+  generate-drift:
+    name: Assert generated output matches committed out/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          version: 1.50.0
+          lint: false
+          format: false
+          breaking: false
+          push: false
+
+      - name: Regenerate
+        run: |
+          rm -rf out/
+          buf generate
+
+      - name: Assert no drift
+        run: |
+          DRIFT=$(git status --porcelain out/)
+          if [[ -n "$DRIFT" ]]; then
+            echo "ERROR: generated SDK source has drifted from committed out/."
+            echo "Run 'buf generate' locally and commit the result."
+            git diff out/
+            exit 1
+          fi
+
+  validate-conventions:
+    name: Validate conventions/telemetry.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install pyyaml
+
+      - name: Run convention validator
+        run: python scripts/validate_conventions.py
