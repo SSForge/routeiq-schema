@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package routeiq.v1.insights;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/insights;insightsv1";
+option java_outer_classname = "SloProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.insights";
+
+message SloTarget {
+  string id = 1;
+  string metric_id = 2;
+  string workspace_id = 3;
+  string tier = 4;
+  string target_expression = 5;
+  string window = 6;
+}
+
+message SloStatus {
+  string slo_id = 1;
+  string metric_id = 2;
+  double current_value = 3;
+  double target_value = 4;
+  SloState state = 5;
+  double error_budget_remaining = 6;
+  google.protobuf.Timestamp evaluated_at = 7;
+}
+
+enum SloState {
+  SLO_STATE_UNSPECIFIED = 0;
+  MEETING = 1;
+  AT_RISK = 2;
+  BREACHED = 3;
+}
