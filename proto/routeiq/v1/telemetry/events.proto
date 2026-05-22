@@ -63,6 +63,7 @@ message AgentEvent {
   VersionLineage versions = 14;
   AutonomyMode autonomy_mode = 15;
   RiskTier risk_tier = 16;
+  string session_id = 17;
 
   oneof payload {
     TaskEvent task = 100;

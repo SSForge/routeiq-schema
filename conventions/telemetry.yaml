@@ -44,6 +44,11 @@ conventions:
     type: STRING
     required: false
 
+  - proto_field_path: "AgentEvent.session_id"
+    otel_attribute_key: "routeiq.session.id"
+    type: STRING
+    required: false
+
   - proto_field_path: "AgentEvent.workflow_id"
     otel_attribute_key: "routeiq.workflow.id"
     type: STRING
