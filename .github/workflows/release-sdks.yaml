@@ -33,6 +33,7 @@ jobs:
             repo: SSForge/routeiq-sdk-go
           - lang: python
             src: out/python
+            sdk: sdk/python
             repo: SSForge/routeiq-sdk-python
           - lang: typescript
             src: out/typescript
@@ -70,8 +71,11 @@ jobs:
       - name: Sync generated files
         env:
           SDK_SRC: ${{ matrix.src }}
+          SDK_LAYER: ${{ matrix.sdk }}
         run: |
           # Preserve files the SDK repo owns (manifests, README, .gitignore).
+          # pyproject.toml is NOT preserved for languages that supply sdk/ — it
+          # comes from sdk/<lang>/pyproject.toml and is the source of truth.
           find /tmp/sdk -mindepth 1 -maxdepth 1 \
             ! -name '.git' \
             ! -name 'README.md' \
@@ -80,11 +84,17 @@ jobs:
             ! -name 'package.json' \
             ! -name 'Cargo.toml' \
             ! -name 'Gemfile' \
-            ! -name 'pyproject.toml' \
             ! -name '.gitignore' \
+            $( [ -z "${SDK_LAYER}" ] && echo "! -name pyproject.toml" ) \
             -exec rm -rf {} +
 
+          # Copy generated wire layer
           cp -r "${SDK_SRC}/." /tmp/sdk/
+
+          # Copy hand-written developer layer (if this language has one)
+          if [ -n "${SDK_LAYER}" ] && [ -d "${SDK_LAYER}" ]; then
+            cp -r "${SDK_LAYER}/." /tmp/sdk/
+          fi
 
       - name: Commit and push
         env:
