@@ -263,29 +263,6 @@ impl AttributeType {
         }
     }
 }
-/// SemanticConvention maps a typed proto field to its OTel span attribute key.
-/// Read by the SDK code generator to emit the right attribute keys.
-/// Read by routeiq_validator (collector component) to validate incoming spans.
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct SemanticConvention {
-    /// e.g. "TaskEvent.completion_status"
-    #[prost(string, tag="1")]
-    pub proto_field_path: ::prost::alloc::string::String,
-    /// e.g. "routeiq.task.completion_status"
-    #[prost(string, tag="2")]
-    pub otel_attribute_key: ::prost::alloc::string::String,
-    #[prost(enumeration="AttributeType", tag="3")]
-    pub r#type: i32,
-    #[prost(bool, tag="4")]
-    pub required: bool,
-}
-/// ConventionRegistry is the root message for conventions/telemetry.yaml.
-/// Every AgentEvent field that appears on the wire must have an entry here.
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConventionRegistry {
-    #[prost(message, repeated, tag="1")]
-    pub conventions: ::prost::alloc::vec::Vec<SemanticConvention>,
-}
 /// VersionLineage carries the full software bill-of-materials for a run.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct VersionLineage {
@@ -640,5 +617,28 @@ impl EventType {
             _ => None,
         }
     }
+}
+/// SemanticConvention maps a typed proto field to its OTel span attribute key.
+/// Read by the SDK code generator to emit the right attribute keys.
+/// Read by routeiq_validator (collector component) to validate incoming spans.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SemanticConvention {
+    /// e.g. "TaskEvent.completion_status"
+    #[prost(string, tag="1")]
+    pub proto_field_path: ::prost::alloc::string::String,
+    /// e.g. "routeiq.task.completion_status"
+    #[prost(string, tag="2")]
+    pub otel_attribute_key: ::prost::alloc::string::String,
+    #[prost(enumeration="AttributeType", tag="3")]
+    pub r#type: i32,
+    #[prost(bool, tag="4")]
+    pub required: bool,
+}
+/// ConventionRegistry is the root message for conventions/telemetry.yaml.
+/// Every AgentEvent field that appears on the wire must have an entry here.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConventionRegistry {
+    #[prost(message, repeated, tag="1")]
+    pub conventions: ::prost::alloc::vec::Vec<SemanticConvention>,
 }
 // @@protoc_insertion_point(module)

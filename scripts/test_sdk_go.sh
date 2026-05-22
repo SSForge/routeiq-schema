@@ -9,9 +9,10 @@ GO_OUT="$WORKSPACE/out/go"
 cleanup() { rm -f "$GO_OUT/go.mod" "$GO_OUT/go.sum"; }
 trap cleanup EXIT
 
-# Inject a minimal go.mod so `go build` can resolve google.golang.org/protobuf.
+# Inject a go.mod whose module path matches the BSR-generated import paths so
+# cross-package imports (e.g. metrics importing telemetry) resolve locally.
 cat > "$GO_OUT/go.mod" << 'EOF'
-module routeiq.dev/sdk-verify
+module buf.build/gen/go/ssforge/routeiq/protocolbuffers/go
 go 1.23
 require google.golang.org/protobuf v1.36.5
 EOF
