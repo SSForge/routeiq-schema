@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package routeiq.v1.admin;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/admin;adminv1";
+option java_outer_classname = "OrganizationProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.admin";
+
+service OrganizationService {
+  rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
+  rpc GetOrganization(GetOrganizationRequest) returns (Organization);
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (google.protobuf.Empty);
+  rpc CreateWorkspace(CreateWorkspaceRequest) returns (Workspace);
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse);
+  rpc UpdateWorkspace(UpdateWorkspaceRequest) returns (Workspace);
+}
+
+message Organization {
+  string id = 1;
+  string name = 2;
+  Tier tier = 3;
+  google.protobuf.Timestamp created_at = 4;
+  repeated Workspace workspaces = 5;
+}
+
+message Workspace {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string environment = 4;
+  Region region = 5;
+  RetentionConfig retention = 6;
+}
+
+message RetentionConfig {
+  int32 hot_days = 1;
+  int32 warm_days = 2;
+  int32 cold_days = 3;
+}
+
+enum Tier {
+  TIER_UNSPECIFIED = 0;
+  FREE = 1;
+  GROWTH = 2;
+  PRO = 3;
+  ENTERPRISE = 4;
+}
+
+enum Region {
+  REGION_UNSPECIFIED = 0;
+  US_EAST_1 = 1;
+  US_WEST_2 = 2;
+  EU_WEST_1 = 3;
+  AP_SOUTHEAST_1 = 4;
+}
+
+message CreateOrganizationRequest {
+  string name = 1;
+  Tier tier = 2;
+}
+
+message GetOrganizationRequest {
+  string id = 1;
+}
+
+message ListOrganizationsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+  string next_page_token = 2;
+}
+
+message UpdateOrganizationRequest {
+  string id = 1;
+  string name = 2;
+  Tier tier = 3;
+}
+
+message DeleteOrganizationRequest {
+  string id = 1;
+}
+
+message CreateWorkspaceRequest {
+  string organization_id = 1;
+  string name = 2;
+  string environment = 3;
+  Region region = 4;
+}
+
+message ListWorkspacesRequest {
+  string organization_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListWorkspacesResponse {
+  repeated Workspace workspaces = 1;
+  string next_page_token = 2;
+}
+
+message UpdateWorkspaceRequest {
+  string id = 1;
+  string name = 2;
+  RetentionConfig retention = 3;
+}
