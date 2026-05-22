@@ -166,3 +166,222 @@ conventions:
     otel_attribute_key: "routeiq.tool.error_code"
     type: STRING
     required: false
+
+  # ── StepEvent ────────────────────────────────────────────────────────────
+  - proto_field_path: "StepEvent.selected_action"
+    otel_attribute_key: "routeiq.step.selected_action"
+    type: STRING
+    required: false
+
+  - proto_field_path: "StepEvent.action_rationale"
+    otel_attribute_key: "routeiq.step.action_rationale"
+    type: STRING
+    required: false
+
+  - proto_field_path: "StepEvent.completion_status"
+    otel_attribute_key: "routeiq.step.completion_status"
+    type: STRING
+    required: true
+
+  - proto_field_path: "StepEvent.failure_category"
+    otel_attribute_key: "routeiq.step.failure_category"
+    type: STRING
+    required: false
+
+  - proto_field_path: "StepEvent.step_index"
+    otel_attribute_key: "routeiq.step.index"
+    type: INT64
+    required: false
+
+  - proto_field_path: "StepEvent.retry_count"
+    otel_attribute_key: "routeiq.step.retry_count"
+    type: INT64
+    required: false
+
+  # ── DecisionEvent ────────────────────────────────────────────────────────
+  - proto_field_path: "DecisionEvent.decision_type"
+    otel_attribute_key: "routeiq.decision.type"
+    type: STRING
+    required: false
+
+  - proto_field_path: "DecisionEvent.options_considered"
+    otel_attribute_key: "routeiq.decision.options_considered"
+    type: STRING
+    required: false
+
+  - proto_field_path: "DecisionEvent.chosen_option"
+    otel_attribute_key: "routeiq.decision.chosen_option"
+    type: STRING
+    required: false
+
+  - proto_field_path: "DecisionEvent.rationale"
+    otel_attribute_key: "routeiq.decision.rationale"
+    type: STRING
+    required: false
+
+  - proto_field_path: "DecisionEvent.confidence"
+    otel_attribute_key: "routeiq.decision.confidence"
+    type: DOUBLE
+    required: false
+
+  # ── RetrievalEvent ───────────────────────────────────────────────────────
+  - proto_field_path: "RetrievalEvent.retrieval_type"
+    otel_attribute_key: "routeiq.retrieval.type"
+    type: STRING
+    required: false
+
+  - proto_field_path: "RetrievalEvent.query_summary"
+    otel_attribute_key: "routeiq.retrieval.query_summary"
+    type: STRING
+    required: false
+
+  - proto_field_path: "RetrievalEvent.results_count"
+    otel_attribute_key: "routeiq.retrieval.results_count"
+    type: INT64
+    required: false
+
+  - proto_field_path: "RetrievalEvent.top_score"
+    otel_attribute_key: "routeiq.retrieval.top_score"
+    type: DOUBLE
+    required: false
+
+  - proto_field_path: "RetrievalEvent.cache_hit"
+    otel_attribute_key: "routeiq.retrieval.cache_hit"
+    type: BOOL
+    required: false
+
+  - proto_field_path: "RetrievalEvent.latency_ms"
+    otel_attribute_key: "routeiq.retrieval.latency_ms"
+    type: DOUBLE
+    required: false
+
+  # ── MemoryEvent ──────────────────────────────────────────────────────────
+  - proto_field_path: "MemoryEvent.memory_type"
+    otel_attribute_key: "routeiq.memory.type"
+    type: STRING
+    required: false
+
+  - proto_field_path: "MemoryEvent.operation"
+    otel_attribute_key: "routeiq.memory.operation"
+    type: STRING
+    required: false
+
+  - proto_field_path: "MemoryEvent.key_summary"
+    otel_attribute_key: "routeiq.memory.key_summary"
+    type: STRING
+    required: false
+
+  - proto_field_path: "MemoryEvent.entries_affected"
+    otel_attribute_key: "routeiq.memory.entries_affected"
+    type: INT64
+    required: false
+
+  # ── HandoffEvent ─────────────────────────────────────────────────────────
+  - proto_field_path: "HandoffEvent.from_agent_id"
+    otel_attribute_key: "routeiq.handoff.from_agent_id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "HandoffEvent.to_agent_id"
+    otel_attribute_key: "routeiq.handoff.to_agent_id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "HandoffEvent.handoff_reason"
+    otel_attribute_key: "routeiq.handoff.reason"
+    type: STRING
+    required: false
+
+  - proto_field_path: "HandoffEvent.status"
+    otel_attribute_key: "routeiq.handoff.status"
+    type: STRING
+    required: false
+
+  - proto_field_path: "HandoffEvent.context_summary"
+    otel_attribute_key: "routeiq.handoff.context_summary"
+    type: STRING
+    required: false
+
+  # ── PolicyEvent ──────────────────────────────────────────────────────────
+  - proto_field_path: "PolicyEvent.policy_id"
+    otel_attribute_key: "routeiq.policy.id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "PolicyEvent.bundle_version"
+    otel_attribute_key: "routeiq.policy.bundle_version"
+    type: STRING
+    required: false
+
+  - proto_field_path: "PolicyEvent.action_evaluated"
+    otel_attribute_key: "routeiq.policy.action_evaluated"
+    type: STRING
+    required: false
+
+  - proto_field_path: "PolicyEvent.verdict"
+    otel_attribute_key: "routeiq.policy.verdict"
+    type: STRING
+    required: true
+
+  - proto_field_path: "PolicyEvent.rules_triggered"
+    otel_attribute_key: "routeiq.policy.rules_triggered"
+    type: STRING_ARRAY
+    required: false
+
+  # ── InterventionEvent ────────────────────────────────────────────────────
+  - proto_field_path: "InterventionEvent.intervention_type"
+    otel_attribute_key: "routeiq.intervention.type"
+    type: STRING
+    required: true
+
+  - proto_field_path: "InterventionEvent.trigger_reason"
+    otel_attribute_key: "routeiq.intervention.trigger_reason"
+    type: STRING
+    required: false
+
+  - proto_field_path: "InterventionEvent.trigger_metric_id"
+    otel_attribute_key: "routeiq.intervention.trigger_metric_id"
+    type: STRING
+    required: false
+
+  - proto_field_path: "InterventionEvent.automated"
+    otel_attribute_key: "routeiq.intervention.automated"
+    type: BOOL
+    required: false
+
+  # ── RecoveryEvent ────────────────────────────────────────────────────────
+  - proto_field_path: "RecoveryEvent.recovery_type"
+    otel_attribute_key: "routeiq.recovery.type"
+    type: STRING
+    required: true
+
+  - proto_field_path: "RecoveryEvent.from_error"
+    otel_attribute_key: "routeiq.recovery.from_error"
+    type: STRING
+    required: false
+
+  - proto_field_path: "RecoveryEvent.succeeded"
+    otel_attribute_key: "routeiq.recovery.succeeded"
+    type: BOOL
+    required: true
+
+  - proto_field_path: "RecoveryEvent.attempt_number"
+    otel_attribute_key: "routeiq.recovery.attempt_number"
+    type: INT64
+    required: false
+
+  # ── StateSnapshotEvent ───────────────────────────────────────────────────
+  - proto_field_path: "StateSnapshotEvent.snapshot_type"
+    otel_attribute_key: "routeiq.state_snapshot.type"
+    type: STRING
+    required: false
+
+  - proto_field_path: "StateSnapshotEvent.state_size_bytes"
+    otel_attribute_key: "routeiq.state_snapshot.size_bytes"
+    type: INT64
+    required: false
+
+  - proto_field_path: "StateSnapshotEvent.snapshot_id"
+    otel_attribute_key: "routeiq.state_snapshot.id"
+    type: STRING
+    required: false
