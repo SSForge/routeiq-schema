@@ -129,3 +129,21 @@ message DecisionEvent {
   string rationale = 4;
   double confidence = 5; // 0.0–1.0 model-reported confidence
 }
+
+// RetrievalEvent records a RAG, search, or knowledge-base lookup.
+message RetrievalEvent {
+  string retrieval_type = 1; // "vector" | "keyword" | "hybrid" | "graph"
+  string query_summary = 2; // sanitized query — PII redacted by collector
+  int32 results_count = 3;
+  double top_score = 4;
+  bool cache_hit = 5; // true if result was served from cache
+  double latency_ms = 6;
+}
+
+// MemoryEvent records a read or write to the agent's memory store.
+message MemoryEvent {
+  string memory_type = 1; // "short_term" | "long_term" | "episodic" | "semantic"
+  string operation = 2; // "read" | "write" | "delete" | "search"
+  string key_summary = 3; // sanitized key/description — PII redacted by collector
+  int32 entries_affected = 4;
+}
