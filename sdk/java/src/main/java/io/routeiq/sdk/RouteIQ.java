@@ -6,8 +6,6 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.semconv.ResourceAttributes;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -49,8 +47,8 @@ public final class RouteIQ implements AutoCloseable {
                 : OtlpGrpcSpanExporter.builder().setEndpoint(ep).build();
 
         var resource = Resource.getDefault().toBuilder()
-                .put(ResourceAttributes.SERVICE_NAME, agentId)
-                .put(ResourceAttributes.SERVICE_VERSION, this.agentVersion)
+                .put("service.name", agentId)
+                .put("service.version", this.agentVersion)
                 .put("routeiq.sdk.version", SDK_VERSION)
                 .build();
 

@@ -1,14 +1,13 @@
 use opentelemetry::{KeyValue, trace::SpanKind};
 use opentelemetry_sdk::{
     testing::trace::InMemorySpanExporter,
-    trace::{self as sdktrace, TracerProvider},
-    Resource,
+    trace::SdkTracerProvider,
 };
 use routeiq_sdk::{RouteIQ, RouteIQOptions, CompleteOpts, ToolOpts};
 
 fn make_test_riq() -> (RouteIQ, InMemorySpanExporter) {
     let exporter = InMemorySpanExporter::default();
-    let provider = sdktrace::TracerProvider::builder()
+    let provider = SdkTracerProvider::builder()
         .with_simple_exporter(exporter.clone())
         .build();
     let opts = RouteIQOptions {

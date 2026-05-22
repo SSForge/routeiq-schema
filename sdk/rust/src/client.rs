@@ -1,7 +1,8 @@
 use opentelemetry::{trace::TracerProvider as _, KeyValue};
+use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
     resource::Resource,
-    trace::{self as sdktrace, TracerProvider},
+    trace::{self as sdktrace, SdkTracerProvider},
 };
 use uuid::Uuid;
 
@@ -27,7 +28,7 @@ pub struct RouteIQ {
     pub(crate) environment: String,
     pub(crate) agent_version: String,
     pub session_id: String,
-    pub(crate) provider: TracerProvider,
+    pub(crate) provider: SdkTracerProvider,
 }
 
 impl RouteIQ {
@@ -46,7 +47,7 @@ impl RouteIQ {
             .with_attribute(KeyValue::new("routeiq.sdk.version", SDK_VERSION))
             .build();
 
-        let provider = sdktrace::TracerProvider::builder()
+        let provider = SdkTracerProvider::builder()
             .with_batch_exporter(exporter)
             .with_resource(resource)
             .build();
@@ -55,7 +56,7 @@ impl RouteIQ {
     }
 
     /// For tests: inject a pre-built TracerProvider.
-    pub(crate) fn with_provider(opts: RouteIQOptions, provider: TracerProvider) -> Self {
+    pub(crate) fn with_provider(opts: RouteIQOptions, provider: SdkTracerProvider) -> Self {
         RouteIQ {
             agent_id: opts.agent_id,
             tenant_id: opts.tenant_id.unwrap_or_else(|| "default".to_string()),

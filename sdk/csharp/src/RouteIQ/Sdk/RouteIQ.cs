@@ -36,7 +36,7 @@ public sealed class RouteIQClient : IDisposable
         SessionId = Guid.NewGuid().ToString();
         ActivitySource = new ActivitySource("routeiq.sdk", SdkVersion);
 
-        _provider = Sdk.CreateTracerProviderBuilder()
+        _provider = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
             .SetResourceBuilder(ResourceBuilder.CreateDefault()
                 .AddService(agentId, serviceVersion: agentVersion)
                 .AddAttributes(new[] { new KeyValuePair<string, object>("routeiq.sdk.version", SdkVersion) }))
