@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
-# Verifies the generated Rust SDK.
-# Creates a minimal Cargo project that depends on prost, imports the generated
-# source file, and compiles it with `cargo check`.
+# Verifies the generated Rust SDK across all five namespaces.
+# Creates a minimal Cargo project that depends on prost, includes all
+# generated source files, and compiles with `cargo check`.
 set -euo pipefail
 
 WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
-RUST_FILE="$WORKSPACE/out/rust/src/proto/routeiq/v1/telemetry/routeiq.v1.telemetry.rs"
+RUST_BASE="$WORKSPACE/out/rust/src/proto/routeiq/v1"
 TMP_DIR="$(mktemp -d)"
 
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
-# Build a minimal Cargo project that includes the generated source.
+TELEMETRY_RS="$RUST_BASE/telemetry/routeiq.v1.telemetry.rs"
+METRICS_RS="$RUST_BASE/metrics/routeiq.v1.metrics.rs"
+INSIGHTS_RS="$RUST_BASE/insights/routeiq.v1.insights.rs"
+CONTROL_RS="$RUST_BASE/control/routeiq.v1.control.rs"
+ADMIN_RS="$RUST_BASE/admin/routeiq.v1.admin.rs"
+
+for f in "$TELEMETRY_RS" "$METRICS_RS" "$INSIGHTS_RS" "$CONTROL_RS" "$ADMIN_RS"; do
+  if [[ ! -f "$f" ]]; then
+    echo "ERROR: generated Rust file not found: $f"
+    exit 1
+  fi
+done
+
 mkdir -p "$TMP_DIR/src"
 
 cat > "$TMP_DIR/Cargo.toml" << 'EOF'
@@ -25,28 +37,33 @@ prost = "0.13"
 prost-types = "0.13"
 EOF
 
-# lib.rs just includes the generated file — same pattern as prost users.
+# Include all five generated files — same pattern as prost users.
 cat > "$TMP_DIR/src/lib.rs" << RUST
-include!("$(realpath "$RUST_FILE")");
+include!("$(realpath "$TELEMETRY_RS")");
+include!("$(realpath "$METRICS_RS")");
+include!("$(realpath "$INSIGHTS_RS")");
+include!("$(realpath "$CONTROL_RS")");
+include!("$(realpath "$ADMIN_RS")");
 RUST
 
 cd "$TMP_DIR"
 cargo check --quiet 2>&1
 
-# Also verify key struct names appear in the generated source.
-EXPECTED_STRUCTS=(
-  "AgentEvent"
-  "TaskEvent"
-  "StepEvent"
-  "RetrievalEvent"
-  "InterventionEvent"
-  "StateSnapshotEvent"
-)
-for s in "${EXPECTED_STRUCTS[@]}"; do
-  if ! grep -q "pub struct $s" "$RUST_FILE"; then
-    echo "ERROR: Rust generated file missing struct: $s"
-    exit 1
-  fi
+# Verify key struct names in each generated file.
+declare -A CHECKS
+CHECKS["$TELEMETRY_RS"]="AgentEvent TaskEvent StepEvent RetrievalEvent StateSnapshotEvent"
+CHECKS["$METRICS_RS"]="MetricDefinition Formula DeterministicFormula HeuristicFormula FrontierFormula"
+CHECKS["$INSIGHTS_RS"]="AlertRule Condition SloTarget"
+CHECKS["$CONTROL_RS"]="CheckGuardrailRequest GuardrailVerdict EscalateRequest"
+CHECKS["$ADMIN_RS"]="Organization User ApiKey"
+
+for file in "${!CHECKS[@]}"; do
+  for s in ${CHECKS[$file]}; do
+    if ! grep -q "pub struct $s" "$file"; then
+      echo "ERROR: $(basename "$file") missing struct: $s"
+      exit 1
+    fi
+  done
 done
 
-echo "Rust SDK: OK — cargo check passed, ${#EXPECTED_STRUCTS[@]} key structs verified"
+echo "Rust SDK: OK — cargo check passed, all 5 namespace files verified"
