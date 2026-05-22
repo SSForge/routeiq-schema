@@ -1,0 +1,115 @@
+name: release-sdks
+
+# Runs automatically when sdk-tests passes on main, or manually.
+# Pushes each generated out/<lang>/ tree to its dedicated public SDK repo.
+# Requires secret: SDK_PUSH_TOKEN — a GitHub PAT (classic) with repo scope
+# on SSForge/routeiq-sdk-{go,python,typescript,ruby,rust,csharp,java}.
+
+on:
+  workflow_run:
+    workflows: ["sdk-tests"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Optional semver tag to apply to each SDK repo (e.g. v0.1.0)"
+        required: false
+
+jobs:
+  push-sdk:
+    name: Release ${{ matrix.lang }} SDK
+    # Skip if triggered via workflow_run but tests didn't pass.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lang: go
+            src: out/go
+            repo: SSForge/routeiq-sdk-go
+          - lang: python
+            src: out/python
+            repo: SSForge/routeiq-sdk-python
+          - lang: typescript
+            src: out/typescript
+            repo: SSForge/routeiq-sdk-typescript
+          - lang: ruby
+            src: out/ruby
+            repo: SSForge/routeiq-sdk-ruby
+          - lang: rust
+            src: out/rust
+            repo: SSForge/routeiq-sdk-rust
+          - lang: csharp
+            src: out/csharp
+            repo: SSForge/routeiq-sdk-csharp
+          - lang: java
+            src: out/java
+            repo: SSForge/routeiq-sdk-java
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "routeiq-bot"
+          git config --global user.email "bot@ssforge.io"
+
+      - name: Clone SDK repo
+        env:
+          PUSH_TOKEN: ${{ secrets.SDK_PUSH_TOKEN }}
+          SDK_REPO: ${{ matrix.repo }}
+        run: |
+          git clone \
+            "https://x-access-token:${PUSH_TOKEN}@github.com/${SDK_REPO}.git" \
+            /tmp/sdk
+
+      - name: Sync generated files
+        env:
+          SDK_SRC: ${{ matrix.src }}
+        run: |
+          # Preserve files the SDK repo owns (manifests, README, .gitignore).
+          find /tmp/sdk -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name 'README.md' \
+            ! -name 'go.mod' \
+            ! -name 'go.sum' \
+            ! -name 'package.json' \
+            ! -name 'Cargo.toml' \
+            ! -name 'Gemfile' \
+            ! -name 'pyproject.toml' \
+            ! -name '.gitignore' \
+            -exec rm -rf {} +
+
+          cp -r "${SDK_SRC}/." /tmp/sdk/
+
+      - name: Commit and push
+        env:
+          PUSH_TOKEN: ${{ secrets.SDK_PUSH_TOKEN }}
+          SDK_REPO: ${{ matrix.repo }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          cd /tmp/sdk
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes — SDK already up to date."
+            exit 0
+          fi
+          git commit -m "chore: sync from routeiq-schema@${COMMIT_SHA:0:8}"
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${SDK_REPO}.git" main
+
+      - name: Tag release
+        if: >
+          (github.event_name == 'workflow_dispatch' && inputs.tag != '') ||
+          startsWith(github.ref, 'refs/tags/v')
+        env:
+          PUSH_TOKEN: ${{ secrets.SDK_PUSH_TOKEN }}
+          SDK_REPO: ${{ matrix.repo }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          cd /tmp/sdk
+          git tag "$RELEASE_TAG" 2>/dev/null || echo "Tag $RELEASE_TAG already exists, skipping."
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${SDK_REPO}.git" "$RELEASE_TAG" || true
