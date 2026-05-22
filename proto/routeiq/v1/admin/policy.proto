@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package routeiq.v1.admin;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/admin;adminv1";
+option java_outer_classname = "PolicyProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.admin";
+
+service PolicyService {
+  rpc CreatePolicyBundle(CreatePolicyBundleRequest) returns (PolicyBundle);
+  rpc GetPolicyBundle(GetPolicyBundleRequest) returns (PolicyBundle);
+  rpc ListPolicyBundles(ListPolicyBundlesRequest) returns (ListPolicyBundlesResponse);
+  rpc ActivatePolicyBundle(ActivatePolicyBundleRequest) returns (PolicyBundle);
+  rpc DeletePolicyBundle(DeletePolicyBundleRequest) returns (google.protobuf.Empty);
+}
+
+message PolicyBundle {
+  string id = 1;
+  string organization_id = 2;
+  string workspace_id = 3;
+  string version = 4;
+  bytes content = 5;
+  bool active = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreatePolicyBundleRequest {
+  string organization_id = 1;
+  string workspace_id = 2;
+  bytes content = 3;
+}
+
+message GetPolicyBundleRequest {
+  string id = 1;
+}
+
+message ListPolicyBundlesRequest {
+  string workspace_id = 1;
+  bool active_only = 2;
+}
+
+message ListPolicyBundlesResponse {
+  repeated PolicyBundle bundles = 1;
+}
+
+message ActivatePolicyBundleRequest {
+  string id = 1;
+}
+
+message DeletePolicyBundleRequest {
+  string id = 1;
+}

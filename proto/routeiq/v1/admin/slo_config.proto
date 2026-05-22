@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package routeiq.v1.admin;
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/admin;adminv1";
+option java_outer_classname = "SloConfigProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.admin";
+
+service SloConfigService {
+  rpc GetSloOverrides(GetSloOverridesRequest) returns (SloOverrides);
+  rpc SetSloOverride(SetSloOverrideRequest) returns (SloOverride);
+  rpc DeleteSloOverride(DeleteSloOverrideRequest) returns (SloOverrides);
+}
+
+message SloOverride {
+  string metric_id = 1;
+  string workspace_id = 2;
+  string tier = 3;
+  string target_expression = 4;
+}
+
+message SloOverrides {
+  string workspace_id = 1;
+  repeated SloOverride overrides = 2;
+}
+
+message GetSloOverridesRequest {
+  string workspace_id = 1;
+}
+
+message SetSloOverrideRequest {
+  SloOverride override = 1;
+}
+
+message DeleteSloOverrideRequest {
+  string metric_id = 1;
+  string workspace_id = 2;
+  string tier = 3;
+}

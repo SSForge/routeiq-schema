@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package routeiq.v1.admin;
+
+import "google/protobuf/timestamp.proto";
+import "routeiq/v1/admin/organization.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/admin;adminv1";
+option java_outer_classname = "BillingProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.admin";
+
+service BillingService {
+  rpc GetUsage(GetUsageRequest) returns (UsageSummary);
+  rpc GetQuota(GetQuotaRequest) returns (Quota);
+}
+
+message UsageSummary {
+  string organization_id = 1;
+  google.protobuf.Timestamp period_start = 2;
+  google.protobuf.Timestamp period_end = 3;
+  int64 events_ingested = 4;
+  int64 metrics_evaluated = 5;
+  int64 frontier_judge_calls = 6;
+  double total_cost_usd = 7;
+}
+
+message Quota {
+  string organization_id = 1;
+  Tier tier = 2;
+  int64 events_per_month = 3;
+  int64 frontier_calls_per_month = 4;
+  int64 retention_days = 5;
+}
+
+message GetUsageRequest {
+  string organization_id = 1;
+  google.protobuf.Timestamp period_start = 2;
+  google.protobuf.Timestamp period_end = 3;
+}
+
+message GetQuotaRequest {
+  string organization_id = 1;
+}
