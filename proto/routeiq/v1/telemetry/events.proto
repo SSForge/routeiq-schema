@@ -66,17 +66,16 @@ message AgentEvent {
 
   oneof payload {
     TaskEvent task = 100;
+    StepEvent step = 101;
+    DecisionEvent decision = 102;
     ToolCallEvent tool_call = 103;
-    // Phase 2 payloads — field numbers reserved for forward compat:
-    // StepEvent step = 101;
-    // DecisionEvent decision = 102;
-    // RetrievalEvent retrieval = 104;
-    // MemoryEvent memory = 105;
-    // HandoffEvent handoff = 106;
-    // PolicyEvent policy = 107;
-    // InterventionEvent intervention = 108;
-    // RecoveryEvent recovery = 109;
-    // StateSnapshotEvent state_snapshot = 110;
+    RetrievalEvent retrieval = 104;
+    MemoryEvent memory = 105;
+    HandoffEvent handoff = 106;
+    PolicyEvent policy = 107;
+    InterventionEvent intervention = 108;
+    RecoveryEvent recovery = 109;
+    StateSnapshotEvent state_snapshot = 110;
   }
 }
 
