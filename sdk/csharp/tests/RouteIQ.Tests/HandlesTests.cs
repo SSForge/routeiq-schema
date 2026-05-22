@@ -30,7 +30,7 @@ public class HandlesTests
     public void Task_SpanNameStartsWithTask()
     {
         var (riq, spans) = MakeTestRiq();
-        using var task = riq.Task("find Paris");
+        using (var _ = riq.Task("find Paris")) { }
         Assert.True(spans.Any(s => s.DisplayName.StartsWith("task:")));
     }
 
@@ -55,8 +55,10 @@ public class HandlesTests
     public void Task_CompleteSetsSucess()
     {
         var (riq, spans) = MakeTestRiq();
-        using var task = riq.Task("q");
-        task.Complete(tokens: 100, cohort: "test");
+        using (var task = riq.Task("q"))
+        {
+            task.Complete(tokens: 100, cohort: "test");
+        }
         var span = spans.First(s => s.DisplayName.StartsWith("task:"));
         Assert.Equal("1",    Attr(span, "routeiq.task.completion_status"));
         Assert.Equal("100",  Attr(span, "routeiq.task.total_tokens"));
@@ -143,8 +145,10 @@ public class HandlesTests
         var (riq, spans) = MakeTestRiq();
         using var task = riq.Task("q");
         using var step = task.Step();
-        using var tool = step.Tool("search");
-        tool.Success(latencyMs: 50.0);
+        using (var tool = step.Tool("search"))
+        {
+            tool.Success(latencyMs: 50.0);
+        }
         var span = spans.First(s => s.DisplayName == "tool:search");
         Assert.Equal("1",  Attr(span, "routeiq.tool.result_status"));
         Assert.Equal("50", Attr(span, "routeiq.tool.latency_ms"));
@@ -156,8 +160,10 @@ public class HandlesTests
         var (riq, spans) = MakeTestRiq();
         using var task = riq.Task("q");
         using var step = task.Step();
-        using var tool = step.Tool("search");
-        tool.Fail("TIMEOUT");
+        using (var tool = step.Tool("search"))
+        {
+            tool.Fail("TIMEOUT");
+        }
         var span = spans.First(s => s.DisplayName == "tool:search");
         Assert.Equal("2",       Attr(span, "routeiq.tool.result_status"));
         Assert.Equal("TIMEOUT", Attr(span, "routeiq.tool.error_code"));

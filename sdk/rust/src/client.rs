@@ -56,8 +56,7 @@ impl RouteIQ {
         Ok(Self::with_provider(opts, provider))
     }
 
-    /// For tests: inject a pre-built TracerProvider.
-    pub(crate) fn with_provider(opts: RouteIQOptions, provider: SdkTracerProvider) -> Self {
+    pub fn with_provider(opts: RouteIQOptions, provider: SdkTracerProvider) -> Self {
         RouteIQ {
             agent_id: opts.agent_id,
             tenant_id: opts.tenant_id.unwrap_or_else(|| "default".to_string()),
