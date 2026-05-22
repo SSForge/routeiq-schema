@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package routeiq.v1.insights;
+
+import "google/protobuf/timestamp.proto";
+import "routeiq/v1/insights/alerts.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/insights;insightsv1";
+option java_outer_classname = "InterventionsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.insights";
+
+message InterventionRecommendation {
+  string id = 1;
+  string alert_rule_id = 2;
+  string metric_id = 3;
+  RecommendedAction action = 4;
+  string rationale = 5;
+  double confidence = 6;
+  google.protobuf.Timestamp generated_at = 7;
+  InterventionStatus status = 8;
+}
+
+enum InterventionStatus {
+  INTERVENTION_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  APPLIED = 2;
+  DISMISSED = 3;
+  EXPIRED = 4;
+}

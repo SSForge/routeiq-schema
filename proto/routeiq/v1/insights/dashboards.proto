@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package routeiq.v1.insights;
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/insights;insightsv1";
+option java_outer_classname = "DashboardsProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.insights";
+
+message DashboardWidget {
+  string id = 1;
+  string title = 2;
+  repeated string metric_ids = 3;
+  WidgetType type = 4;
+  string default_range = 5;
+}
+
+message Dashboard {
+  string id = 1;
+  string title = 2;
+  repeated DashboardWidget widgets = 3;
+}
+
+enum WidgetType {
+  WIDGET_TYPE_UNSPECIFIED = 0;
+  GAUGE = 1;
+  TIMESERIES = 2;
+  TABLE = 3;
+  HEATMAP = 4;
+  SPARKLINE = 5;
+}
