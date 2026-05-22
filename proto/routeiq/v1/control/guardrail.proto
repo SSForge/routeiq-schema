@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package routeiq.v1.control;
+
+import "routeiq/v1/telemetry/entities.proto";
+
+option go_package = "buf.build/gen/go/ssforge/routeiq/protocolbuffers/go/routeiq/v1/control;controlv1";
+option java_outer_classname = "GuardrailProto";
+option java_package = "build.buf.gen.ssforge.routeiq.routeiq.v1.control";
+
+service GuardrailService {
+  rpc CheckGuardrail(CheckGuardrailRequest) returns (CheckGuardrailResponse);
+  rpc RegisterPolicy(RegisterPolicyRequest) returns (RegisterPolicyResponse);
+}
+
+message CheckGuardrailRequest {
+  string session_id = 1;
+  string proposed_action = 2;
+  routeiq.v1.telemetry.PermissionLevel permission_level = 3;
+  string risk_context = 4;
+}
+
+message CheckGuardrailResponse {
+  GuardrailVerdict verdict = 1;
+  string reason = 2;
+  repeated string policy_ids_triggered = 3;
+}
+
+enum GuardrailVerdict {
+  GUARDRAIL_VERDICT_UNSPECIFIED = 0;
+  ALLOW = 1;
+  BLOCK = 2;
+  REQUIRE_APPROVAL = 3;
+}
+
+message RegisterPolicyRequest {
+  string policy_id = 1;
+  string bundle_version = 2;
+  bytes policy_content = 3;
+}
+
+message RegisterPolicyResponse {
+  bool accepted = 1;
+  string effective_version = 2;
+}
