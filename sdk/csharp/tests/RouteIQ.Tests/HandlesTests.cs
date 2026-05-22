@@ -69,8 +69,10 @@ public class HandlesTests
     public void Task_FailSetsFailure()
     {
         var (riq, spans) = MakeTestRiq();
-        using var task = riq.Task("q");
-        task.Fail("tool_error");
+        using (var task = riq.Task("q"))
+        {
+            task.Fail("tool_error");
+        }
         var span = spans.First(s => s.DisplayName.StartsWith("task:"));
         Assert.Equal("2",          Attr(span, "routeiq.task.completion_status"));
         Assert.Equal("tool_error", Attr(span, "routeiq.task.failure_category"));
@@ -91,8 +93,10 @@ public class HandlesTests
     public void Step_SpanNameStartsWithStep()
     {
         var (riq, spans) = MakeTestRiq();
-        using var task = riq.Task("q");
-        using var step = task.Step("tool_call");
+        using (var task = riq.Task("q"))
+        {
+            using (var _ = task.Step("tool_call")) { }
+        }
         Assert.True(spans.Any(s => s.DisplayName.StartsWith("step:")));
     }
 
@@ -135,7 +139,7 @@ public class HandlesTests
         var (riq, spans) = MakeTestRiq();
         using var task = riq.Task("q");
         using var step = task.Step();
-        using var tool = step.Tool("search", new() { ["query"] = "Paris" });
+        using (var _ = step.Tool("search", new() { ["query"] = "Paris" })) { }
         Assert.True(spans.Any(s => s.DisplayName == "tool:search"));
     }
 
