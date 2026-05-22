@@ -17,7 +17,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install protobuf \
+          pip install "protobuf>=7.35.0" \
             opentelemetry-sdk \
             opentelemetry-exporter-otlp-proto-grpc \
             opentelemetry-exporter-otlp-proto-http \
