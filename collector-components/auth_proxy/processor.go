@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -77,11 +77,11 @@ func (a *AuthProcessor) Authenticate(ctx context.Context, token string) (KeyInfo
 }
 
 func (a *AuthProcessor) supabaseLookup(ctx context.Context, hash string) (KeyInfo, error) {
-	url := fmt.Sprintf(
-		"%s/rest/v1/api_keys?key_hash=eq.%s&select=organization_id,workspace_id,scope,expires_at,revoked_at",
-		a.supaURL, hash,
-	)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	q := url.Values{}
+	q.Set("key_hash", "eq."+hash)
+	q.Set("select", "organization_id,workspace_id,scope,expires_at,revoked_at")
+	reqURL := a.supaURL + "/rest/v1/api_keys?" + q.Encode()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return KeyInfo{}, status.Errorf(codes.Internal, "build request: %v", err)
 	}
@@ -98,7 +98,10 @@ func (a *AuthProcessor) supabaseLookup(ctx context.Context, hash string) (KeyInf
 		return KeyInfo{}, status.Errorf(codes.Unavailable, "supabase returned %d", resp.StatusCode)
 	}
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return KeyInfo{}, status.Errorf(codes.Internal, "read supabase response: %v", err)
+	}
 	var rows []supabaseRow
 	if err := json.Unmarshal(body, &rows); err != nil {
 		return KeyInfo{}, status.Errorf(codes.Internal, "parse supabase response: %v", err)
@@ -112,8 +115,11 @@ func (a *AuthProcessor) supabaseLookup(ctx context.Context, hash string) (KeyInf
 		return KeyInfo{}, status.Error(codes.Unauthenticated, "api key revoked")
 	}
 	if row.ExpiresAt != nil {
-		exp, err := time.Parse(time.RFC3339, *row.ExpiresAt)
-		if err == nil && time.Now().After(exp) {
+		exp, parseErr := time.Parse(time.RFC3339, *row.ExpiresAt)
+		if parseErr != nil {
+			return KeyInfo{}, status.Errorf(codes.Internal, "invalid expires_at format: %v", parseErr)
+		}
+		if time.Now().After(exp) {
 			return KeyInfo{}, status.Error(codes.Unauthenticated, "api key expired")
 		}
 	}
