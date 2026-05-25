@@ -15,7 +15,7 @@ Protobuf schema, semantic conventions, heuristic detectors, judge rubrics, and S
 | `detectors/` | Heuristic detector implementations (Python) |
 | `rubrics/` | LLM judge prompts (Markdown) |
 | `classifiers/` | Semantic classifier configs (YAML) |
-| `collector-components/` | OTel Collector processor modules (Go) |
+| `collector-components/auth_proxy/` | Auth proxy sidecar (Go) — validates API keys, injects tenant attributes |
 | `out/` | Generated SDK bindings — committed, language-agnostic |
 
 ## Quickstart
