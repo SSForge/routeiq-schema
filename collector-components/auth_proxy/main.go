@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	tracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
@@ -17,6 +18,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -90,10 +92,19 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isJSON := strings.Contains(r.Header.Get("Content-Type"), "application/json")
+
 	var req tracepb.ExportTraceServiceRequest
-	if err := proto.Unmarshal(body, &req); err != nil {
-		http.Error(w, "invalid protobuf body", http.StatusBadRequest)
-		return
+	if isJSON {
+		if err := protojson.Unmarshal(body, &req); err != nil {
+			http.Error(w, "invalid json body", http.StatusBadRequest)
+			return
+		}
+	} else {
+		if err := proto.Unmarshal(body, &req); err != nil {
+			http.Error(w, "invalid protobuf body", http.StatusBadRequest)
+			return
+		}
 	}
 
 	InjectAttrs(&req, info)
