@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -94,38 +93,44 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	isJSON := strings.Contains(r.Header.Get("Content-Type"), "application/json")
 
-	var req tracepb.ExportTraceServiceRequest
+	var upBody []byte
+	var upContentType string
+
 	if isJSON {
-		if err := protojson.Unmarshal(body, &req); err != nil {
+		out, err := InjectAttrsJSON(body, info)
+		if err != nil {
 			http.Error(w, "invalid json body", http.StatusBadRequest)
 			return
 		}
+		upBody = out
+		upContentType = "application/json"
 	} else {
+		var req tracepb.ExportTraceServiceRequest
 		if err := proto.Unmarshal(body, &req); err != nil {
 			http.Error(w, "invalid protobuf body", http.StatusBadRequest)
 			return
 		}
+		InjectAttrs(&req, info)
+		out, err := proto.Marshal(&req)
+		if err != nil {
+			http.Error(w, "internal marshal error", http.StatusInternalServerError)
+			return
+		}
+		upBody = out
+		upContentType = "application/x-protobuf"
 	}
 
-	InjectAttrs(&req, info)
-
-	out, err := proto.Marshal(&req)
-	if err != nil {
-		http.Error(w, "internal marshal error", http.StatusInternalServerError)
-		return
-	}
-
-	upResp, err := h.client.Post(h.upstreamURL+"/v1/traces", "application/x-protobuf", bytes.NewReader(out))
+	upResp, err := h.client.Post(h.upstreamURL+"/v1/traces", upContentType, bytes.NewReader(upBody))
 	if err != nil {
 		http.Error(w, "upstream collector unreachable", http.StatusServiceUnavailable)
 		return
 	}
 	defer upResp.Body.Close()
 
-	upBody, _ := io.ReadAll(upResp.Body)
+	respBody, _ := io.ReadAll(upResp.Body)
 	w.Header().Set("Content-Type", upResp.Header.Get("Content-Type"))
 	w.WriteHeader(upResp.StatusCode)
-	w.Write(upBody)
+	w.Write(respBody)
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

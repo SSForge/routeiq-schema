@@ -147,6 +147,40 @@ func InjectAttrs(req *tracepb.ExportTraceServiceRequest, info KeyInfo) {
 	}
 }
 
+// InjectAttrsJSON injects tenant attributes directly into a raw OTel JSON body.
+// It works with any bytes encoding (hex or base64) since it never touches the bytes fields.
+func InjectAttrsJSON(body []byte, info KeyInfo) ([]byte, error) {
+	var root map[string]interface{}
+	if err := json.Unmarshal(body, &root); err != nil {
+		return nil, err
+	}
+	rsList, _ := root["resourceSpans"].([]interface{})
+	for _, rs := range rsList {
+		rsMap, ok := rs.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		resource, _ := rsMap["resource"].(map[string]interface{})
+		if resource == nil {
+			resource = map[string]interface{}{}
+			rsMap["resource"] = resource
+		}
+		attrs, _ := resource["attributes"].([]interface{})
+		attrs = append(attrs, map[string]interface{}{
+			"key":   "routeiq.tenant.id",
+			"value": map[string]interface{}{"stringValue": info.OrgID},
+		})
+		if info.WorkspaceID != "" {
+			attrs = append(attrs, map[string]interface{}{
+				"key":   "routeiq.workspace.id",
+				"value": map[string]interface{}{"stringValue": info.WorkspaceID},
+			})
+		}
+		resource["attributes"] = attrs
+	}
+	return json.Marshal(root)
+}
+
 // ExtractBearer returns the token from an "Authorization: Bearer <token>" header value.
 func ExtractBearer(authHeader string) string {
 	if after, ok := strings.CutPrefix(authHeader, "Bearer "); ok {
