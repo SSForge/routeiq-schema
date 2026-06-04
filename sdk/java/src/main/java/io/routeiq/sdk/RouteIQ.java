@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public final class RouteIQ implements AutoCloseable {
 
-    private static final String SDK_VERSION = "0.2.0";
+    private static final String SDK_VERSION = "0.3.0";
 
     final String agentId;
     final String tenantId;
@@ -20,6 +20,10 @@ public final class RouteIQ implements AutoCloseable {
     final String environment;
     final String agentVersion;
     final String sessionId;
+    final String systemId;
+    final String userId;
+    final Double sloSuccessTarget;
+    final Double sloP95MsTarget;
     final Tracer tracer;
     private final SdkTracerProvider provider;
 
@@ -31,13 +35,32 @@ public final class RouteIQ implements AutoCloseable {
             String environment,
             String agentVersion,
             String apiKey) {
+        this(agentId, otlpEndpoint, tenantId, model, environment, agentVersion, apiKey, null, null, null, null);
+    }
 
-        this.agentId      = agentId;
-        this.tenantId     = tenantId != null ? tenantId : "default";
-        this.model        = model;
-        this.environment  = environment != null ? environment : "production";
-        this.agentVersion = agentVersion != null ? agentVersion : "1.0.0";
-        this.sessionId    = UUID.randomUUID().toString();
+    public RouteIQ(
+            String agentId,
+            String otlpEndpoint,
+            String tenantId,
+            String model,
+            String environment,
+            String agentVersion,
+            String apiKey,
+            String systemId,
+            String userId,
+            Double sloSuccessTarget,
+            Double sloP95MsTarget) {
+
+        this.agentId           = agentId;
+        this.tenantId          = tenantId != null ? tenantId : "default";
+        this.model             = model;
+        this.environment       = environment != null ? environment : "production";
+        this.agentVersion      = agentVersion != null ? agentVersion : "1.0.0";
+        this.sessionId         = UUID.randomUUID().toString();
+        this.systemId          = systemId;
+        this.userId            = userId;
+        this.sloSuccessTarget  = sloSuccessTarget;
+        this.sloP95MsTarget    = sloP95MsTarget;
 
         String ep = otlpEndpoint != null ? otlpEndpoint : "http://localhost:4317";
 
@@ -61,14 +84,18 @@ public final class RouteIQ implements AutoCloseable {
 
     /** Constructor for tests — inject a pre-built provider. */
     RouteIQ(String agentId, SdkTracerProvider provider) {
-        this.agentId      = agentId;
-        this.tenantId     = "test-tenant";
-        this.model        = "gpt-4o";
-        this.environment  = "test";
-        this.agentVersion = "1.0.0";
-        this.sessionId    = UUID.randomUUID().toString();
-        this.provider     = provider;
-        this.tracer       = provider.get("routeiq.sdk", SDK_VERSION);
+        this.agentId          = agentId;
+        this.tenantId         = "test-tenant";
+        this.model            = "gpt-4o";
+        this.environment      = "test";
+        this.agentVersion     = "1.0.0";
+        this.sessionId        = UUID.randomUUID().toString();
+        this.systemId         = null;
+        this.userId           = null;
+        this.sloSuccessTarget = null;
+        this.sloP95MsTarget   = null;
+        this.provider         = provider;
+        this.tracer           = provider.get("routeiq.sdk", SDK_VERSION);
     }
 
     public TaskHandle task(String intent) {
@@ -95,6 +122,10 @@ public final class RouteIQ implements AutoCloseable {
         attrs.put("routeiq.tenant.id",   tenantId);
         attrs.put("routeiq.environment", environment);
         attrs.put("routeiq.session.id",  sessionId);
+        if (systemId         != null) attrs.put("routeiq.system.id",          systemId);
+        if (userId           != null) attrs.put("routeiq.user.id",             userId);
+        if (sloSuccessTarget != null) attrs.put("routeiq.slo.success_target",  sloSuccessTarget);
+        if (sloP95MsTarget   != null) attrs.put("routeiq.slo.p95_ms_target",   sloP95MsTarget);
         if (task != null) {
             attrs.put("routeiq.task.id", task.taskId);
             attrs.put("routeiq.run.id",  task.runId);

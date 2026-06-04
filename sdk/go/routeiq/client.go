@@ -15,17 +15,21 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const sdkVersion = "0.2.0"
+const sdkVersion = "0.3.0"
 
 // Options configures a RouteIQ instance.
 type Options struct {
-	AgentID      string
-	OTLPEndpoint string // default: "localhost:4317" (gRPC)
-	TenantID     string // default: "default"
-	Model        string
-	Environment  string // default: "production"
-	AgentVersion string // default: "1.0.0"
-	APIKey       string
+	AgentID          string
+	OTLPEndpoint     string   // default: "localhost:4317" (gRPC)
+	TenantID         string   // default: "default"
+	Model            string
+	Environment      string   // default: "production"
+	AgentVersion     string   // default: "1.0.0"
+	APIKey           string
+	SystemID         string   // groups this agent under a named system
+	UserID           string   // end-user ID for per-user analytics
+	SLOSuccessTarget *float64 // minimum acceptable success rate (0–1)
+	SLOP95MsTarget   *float64 // p95 latency SLO in milliseconds
 }
 
 // RouteIQ is the main SDK entry point. One per agent process.
@@ -113,6 +117,18 @@ func (r *RouteIQ) envelope(task *TaskHandle, step *StepHandle) []attribute.KeyVa
 		attribute.String("routeiq.tenant.id", r.opts.TenantID),
 		attribute.String("routeiq.environment", r.opts.Environment),
 		attribute.String("routeiq.session.id", r.sessionID),
+	}
+	if r.opts.SystemID != "" {
+		attrs = append(attrs, attribute.String("routeiq.system.id", r.opts.SystemID))
+	}
+	if r.opts.UserID != "" {
+		attrs = append(attrs, attribute.String("routeiq.user.id", r.opts.UserID))
+	}
+	if r.opts.SLOSuccessTarget != nil {
+		attrs = append(attrs, attribute.Float64("routeiq.slo.success_target", *r.opts.SLOSuccessTarget))
+	}
+	if r.opts.SLOP95MsTarget != nil {
+		attrs = append(attrs, attribute.Float64("routeiq.slo.p95_ms_target", *r.opts.SLOP95MsTarget))
 	}
 	if task != nil {
 		attrs = append(attrs,

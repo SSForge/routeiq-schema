@@ -8,13 +8,17 @@ require_relative "../lib/routeiq/handles"
 class TestRiq
   attr_reader :session_id, :tracer
 
-  def initialize
-    @session_id = SecureRandom.uuid
-    @agent_id      = "test-agent"
-    @tenant_id     = "test-tenant"
-    @environment   = "test"
-    @model         = "gpt-4o"
-    @agent_version = "1.0.0"
+  def initialize(system_id: nil, user_id: nil, slo_success_target: nil, slo_p95_ms_target: nil)
+    @session_id         = SecureRandom.uuid
+    @agent_id           = "test-agent"
+    @tenant_id          = "test-tenant"
+    @environment        = "test"
+    @model              = "gpt-4o"
+    @agent_version      = "1.0.0"
+    @system_id          = system_id
+    @user_id            = user_id
+    @slo_success_target = slo_success_target
+    @slo_p95_ms_target  = slo_p95_ms_target
 
     @exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
     provider  = OpenTelemetry::SDK::Trace::TracerProvider.new
@@ -35,6 +39,10 @@ class TestRiq
       "routeiq.environment" => @environment,
       "routeiq.session.id"  => @session_id
     }
+    attrs["routeiq.system.id"]          = @system_id          if @system_id
+    attrs["routeiq.user.id"]            = @user_id            if @user_id
+    attrs["routeiq.slo.success_target"] = @slo_success_target if @slo_success_target
+    attrs["routeiq.slo.p95_ms_target"]  = @slo_p95_ms_target  if @slo_p95_ms_target
     if task
       attrs["routeiq.task.id"] = task.task_id
       attrs["routeiq.run.id"]  = task.run_id
@@ -228,5 +236,135 @@ class HandlesTest < Minitest::Test
     session_ids = @riq.spans.map { |s| attr(s, "routeiq.session.id") }.uniq
     assert_equal 1, session_ids.length
     assert_equal @riq.session_id, session_ids.first
+  end
+
+  # ── v0.3.0 signals ──────────────────────────────────────────────────────────
+
+  def test_tool_retry_count
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    step = RouteIQ::StepHandle.new(task)
+    tool = RouteIQ::ToolHandle.new(step, "db_query")
+    tool.fail(error_code: "TIMEOUT", retry_count: 3)
+    tool.end_span
+    step.end_span
+    task.end_span
+
+    span = @riq.spans.find { |s| s.name == "tool:db_query" }
+    assert_equal 3, attr(span, "routeiq.tool.retry_count")
+  end
+
+  def test_tool_token_split
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    step = RouteIQ::StepHandle.new(task)
+    tool = RouteIQ::ToolHandle.new(step, "llm")
+    tool.success(tokens_in: 100, tokens_out: 200)
+    tool.end_span
+    step.end_span
+    task.end_span
+
+    span = @riq.spans.find { |s| s.name == "tool:llm" }
+    assert_equal 100, attr(span, "routeiq.tool.tokens_in")
+    assert_equal 200, attr(span, "routeiq.tool.tokens_out")
+  end
+
+  def test_same_tool_count
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    4.times do |i|
+      step = RouteIQ::StepHandle.new(task, index: i + 1)
+      tool = RouteIQ::ToolHandle.new(step, "search")
+      tool.success
+      tool.end_span
+      step.complete
+      step.end_span
+    end
+    task.complete
+    task.end_span
+
+    span = spans_by_prefix("task:").first
+    assert_equal 4, attr(span, "routeiq.same_tool_count")
+  end
+
+  def test_same_tool_count_not_emitted_for_distinct
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    s1 = RouteIQ::StepHandle.new(task, index: 1)
+    RouteIQ::ToolHandle.new(s1, "search").tap { |t| t.success; t.end_span }
+    s1.complete; s1.end_span
+    s2 = RouteIQ::StepHandle.new(task, index: 2)
+    RouteIQ::ToolHandle.new(s2, "write").tap { |t| t.success; t.end_span }
+    s2.complete; s2.end_span
+    task.complete
+    task.end_span
+
+    span = spans_by_prefix("task:").first
+    assert_nil attr(span, "routeiq.same_tool_count")
+  end
+
+  def test_escalation
+    task = RouteIQ::TaskHandle.new(@riq, "refund")
+    task.escalate(reason: "amount_too_large", target: "human_review")
+    task.end_span
+
+    span = @riq.spans.find { |s| s.name.start_with?("escalation:") }
+    assert_equal "true",             attr(span, "routeiq.escalation.triggered")
+    assert_equal "amount_too_large", attr(span, "routeiq.escalation.reason")
+    assert_equal "human_review",     attr(span, "routeiq.escalation.target")
+  end
+
+  def test_guardrail
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    step = RouteIQ::StepHandle.new(task)
+    step.guardrail("pii_filter", true)
+    step.end_span
+    task.end_span
+
+    span = @riq.spans.find { |s| s.name.start_with?("guardrail:") }
+    assert_equal "pii_filter", attr(span, "routeiq.guardrail.type")
+    assert_equal "true",       attr(span, "routeiq.guardrail.blocked")
+  end
+
+  def test_replan
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    step = RouteIQ::StepHandle.new(task, action: "search")
+    step.replan("search_failed_switching_to_cache")
+    step.end_span
+    task.end_span
+
+    span = spans_by_prefix("step:").first
+    assert_equal "true",                             attr(span, "routeiq.replan.triggered")
+    assert_equal "search_failed_switching_to_cache", attr(span, "routeiq.replan.reason")
+  end
+
+  def test_step_model_override
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    step = RouteIQ::StepHandle.new(task, model: "claude-opus-4-5")
+    step.end_span
+    task.end_span
+
+    span = spans_by_prefix("step:").first
+    assert_equal "claude-opus-4-5", attr(span, "routeiq.step.model")
+  end
+
+  def test_task_token_split_auto_sums
+    task = RouteIQ::TaskHandle.new(@riq, "q")
+    task.complete(tokens_in: 300, tokens_out: 700)
+    task.end_span
+
+    span = spans_by_prefix("task:").first
+    assert_equal 300,  attr(span, "routeiq.task.tokens_in")
+    assert_equal 700,  attr(span, "routeiq.task.tokens_out")
+    assert_equal 1000, attr(span, "routeiq.task.total_tokens")
+  end
+
+  def test_system_id_and_slo_targets
+    riq = TestRiq.new(system_id: "checkout-bot", user_id: "user_42",
+                      slo_success_target: 0.95, slo_p95_ms_target: 2000.0)
+    task = RouteIQ::TaskHandle.new(riq, "q")
+    task.end_span
+
+    span = riq.spans.find { |s| s.name.start_with?("task:") }
+    assert_equal "checkout-bot", attr(span, "routeiq.system.id")
+    assert_equal "user_42",      attr(span, "routeiq.user.id")
+    assert_in_delta 0.95,   attr(span, "routeiq.slo.success_target"), 0.001
+    assert_in_delta 2000.0, attr(span, "routeiq.slo.p95_ms_target"),  0.001
   end
 end

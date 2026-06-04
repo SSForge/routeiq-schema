@@ -60,7 +60,7 @@ func byName(spans []sdktrace.ReadOnlySpan, prefix string) sdktrace.ReadOnlySpan 
 func attrStr(s sdktrace.ReadOnlySpan, key string) string {
 	for _, kv := range s.Attributes() {
 		if string(kv.Key) == key {
-			return kv.Value.AsString()
+			return kv.Value.Emit()
 		}
 	}
 	return ""
@@ -242,7 +242,7 @@ func TestToolSuccess(t *testing.T) {
 	task := riq.Task(context.Background(), "q")
 	step := task.Step()
 	tool := step.Tool("search")
-	tool.Success(50.0)
+	tool.Success(WithLatencyMs(50.0))
 	tool.End()
 	step.End()
 	task.End()
@@ -253,6 +253,9 @@ func TestToolSuccess(t *testing.T) {
 	}
 	if attrStr(span, "routeiq.tool.result_status") != "1" {
 		t.Error("expected success status")
+	}
+	if attrStr(span, "routeiq.tool.latency_ms") == "" {
+		t.Error("expected latency_ms to be set")
 	}
 }
 
@@ -315,6 +318,15 @@ func TestToolArgsHash(t *testing.T) {
 	}
 }
 
+func attrFloat64(s sdktrace.ReadOnlySpan, key string) float64 {
+	for _, kv := range s.Attributes() {
+		if string(kv.Key) == key {
+			return kv.Value.AsFloat64()
+		}
+	}
+	return 0
+}
+
 func TestSessionIDConsistent(t *testing.T) {
 	riq, rec := makeTestRiq(t)
 	task := riq.Task(context.Background(), "q")
@@ -330,5 +342,227 @@ func TestSessionIDConsistent(t *testing.T) {
 	}
 	if len(seen) != 1 || !seen[riq.sessionID] {
 		t.Errorf("session_id inconsistent across spans: %v", seen)
+	}
+}
+
+// ── v0.3.0 signals ────────────────────────────────────────────────────────────
+
+func TestToolRetryCount(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	step := task.Step()
+	tool := step.Tool("db_query")
+	tool.Fail("TIMEOUT", WithRetryCount(3))
+	tool.End()
+	step.End()
+	task.End()
+
+	span := byName(rec.all(), "tool:db_query")
+	if span == nil {
+		t.Fatal("tool span not found")
+	}
+	if attrInt(span, "routeiq.tool.retry_count") != 3 {
+		t.Errorf("retry_count mismatch, got %d", attrInt(span, "routeiq.tool.retry_count"))
+	}
+}
+
+func TestToolTokenSplit(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	step := task.Step()
+	tool := step.Tool("llm")
+	tool.Success(WithToolTokensIn(100), WithToolTokensOut(200))
+	tool.End()
+	step.End()
+	task.End()
+
+	span := byName(rec.all(), "tool:llm")
+	if span == nil {
+		t.Fatal("tool span not found")
+	}
+	if attrInt(span, "routeiq.tool.tokens_in") != 100 {
+		t.Error("tokens_in mismatch")
+	}
+	if attrInt(span, "routeiq.tool.tokens_out") != 200 {
+		t.Error("tokens_out mismatch")
+	}
+}
+
+func TestSameToolCount(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	for i := 0; i < 4; i++ {
+		step := task.Step()
+		tool := step.Tool("search")
+		tool.End()
+		step.End()
+	}
+	task.Complete()
+	task.End()
+
+	span := byName(rec.all(), "task:")
+	if span == nil {
+		t.Fatal("task span not found")
+	}
+	if attrInt(span, "routeiq.same_tool_count") != 4 {
+		t.Errorf("same_tool_count mismatch, got %d", attrInt(span, "routeiq.same_tool_count"))
+	}
+}
+
+func TestSameToolCountNotEmittedForDistinct(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	s1 := task.Step()
+	s1.Tool("search").End()
+	s1.End()
+	s2 := task.Step()
+	s2.Tool("write").End()
+	s2.End()
+	task.Complete()
+	task.End()
+
+	span := byName(rec.all(), "task:")
+	if span == nil {
+		t.Fatal("task span not found")
+	}
+	for _, kv := range span.Attributes() {
+		if string(kv.Key) == "routeiq.same_tool_count" {
+			t.Error("same_tool_count should not be emitted for distinct tools")
+		}
+	}
+}
+
+func TestEscalation(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "refund")
+	task.Escalate("amount_too_large", "human_review")
+	task.End()
+
+	span := byName(rec.all(), "escalation:")
+	if span == nil {
+		t.Fatal("escalation span not found")
+	}
+	if attrStr(span, "routeiq.escalation.triggered") != "true" {
+		t.Error("escalation.triggered mismatch")
+	}
+	if attrStr(span, "routeiq.escalation.reason") != "amount_too_large" {
+		t.Error("escalation.reason mismatch")
+	}
+	if attrStr(span, "routeiq.escalation.target") != "human_review" {
+		t.Error("escalation.target mismatch")
+	}
+}
+
+func TestGuardrail(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	step := task.Step()
+	step.Guardrail("pii_filter", true)
+	step.End()
+	task.End()
+
+	span := byName(rec.all(), "guardrail:")
+	if span == nil {
+		t.Fatal("guardrail span not found")
+	}
+	if attrStr(span, "routeiq.guardrail.type") != "pii_filter" {
+		t.Error("guardrail.type mismatch")
+	}
+	if attrStr(span, "routeiq.guardrail.blocked") != "true" {
+		t.Error("guardrail.blocked mismatch")
+	}
+}
+
+func TestReplan(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	step := task.Step(WithAction("search"))
+	step.Replan("search_failed_switching_to_cache")
+	step.End()
+	task.End()
+
+	span := byName(rec.all(), "step:")
+	if span == nil {
+		t.Fatal("step span not found")
+	}
+	if attrStr(span, "routeiq.replan.triggered") != "true" {
+		t.Error("replan.triggered mismatch")
+	}
+	if attrStr(span, "routeiq.replan.reason") != "search_failed_switching_to_cache" {
+		t.Error("replan.reason mismatch")
+	}
+}
+
+func TestStepModelOverride(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	step := task.Step(WithModel("claude-opus-4-5"))
+	step.End()
+	task.End()
+
+	span := byName(rec.all(), "step:")
+	if span == nil {
+		t.Fatal("step span not found")
+	}
+	if attrStr(span, "routeiq.step.model") != "claude-opus-4-5" {
+		t.Errorf("step.model mismatch, got %q", attrStr(span, "routeiq.step.model"))
+	}
+}
+
+func TestTaskTokenSplit(t *testing.T) {
+	riq, rec := makeTestRiq(t)
+	task := riq.Task(context.Background(), "q")
+	task.Complete(WithTokensIn(300), WithTokensOut(700))
+	task.End()
+
+	span := byName(rec.all(), "task:")
+	if span == nil {
+		t.Fatal("task span not found")
+	}
+	if attrInt(span, "routeiq.task.tokens_in") != 300 {
+		t.Error("tokens_in mismatch")
+	}
+	if attrInt(span, "routeiq.task.tokens_out") != 700 {
+		t.Error("tokens_out mismatch")
+	}
+	if attrInt(span, "routeiq.task.total_tokens") != 1000 {
+		t.Error("total_tokens mismatch")
+	}
+}
+
+func TestSystemIdAndSloTargets(t *testing.T) {
+	rec := &spanRecorder{}
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec))
+	sloSuccess := 0.95
+	sloP95 := 2000.0
+	riq := newForTest(provider, Options{
+		AgentID:          "test-agent",
+		TenantID:         "test-tenant",
+		Environment:      "test",
+		Model:            "gpt-4o",
+		AgentVersion:     "1.0.0",
+		SystemID:         "checkout-bot",
+		UserID:           "user_42",
+		SLOSuccessTarget: &sloSuccess,
+		SLOP95MsTarget:   &sloP95,
+	})
+	task := riq.Task(context.Background(), "q")
+	task.End()
+
+	span := byName(rec.all(), "task:")
+	if span == nil {
+		t.Fatal("task span not found")
+	}
+	if attrStr(span, "routeiq.system.id") != "checkout-bot" {
+		t.Errorf("system.id mismatch, got %q", attrStr(span, "routeiq.system.id"))
+	}
+	if attrStr(span, "routeiq.user.id") != "user_42" {
+		t.Errorf("user.id mismatch, got %q", attrStr(span, "routeiq.user.id"))
+	}
+	if attrFloat64(span, "routeiq.slo.success_target") != 0.95 {
+		t.Errorf("slo.success_target mismatch, got %v", attrFloat64(span, "routeiq.slo.success_target"))
+	}
+	if attrFloat64(span, "routeiq.slo.p95_ms_target") != 2000.0 {
+		t.Errorf("slo.p95_ms_target mismatch, got %v", attrFloat64(span, "routeiq.slo.p95_ms_target"))
 	}
 }

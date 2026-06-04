@@ -28,15 +28,16 @@ var permissionLevel = map[string]string{
 
 // TaskHandle tracks a single agent task span. Call End() when the task is done.
 type TaskHandle struct {
-	riq        *RouteIQ
-	ctx        context.Context
-	span       trace.Span
-	taskID     string
-	runID      string
-	intent     string
-	taskType   string
-	done       bool
-	stepIndex  int
+	riq          *RouteIQ
+	ctx          context.Context
+	span         trace.Span
+	taskID       string
+	runID        string
+	intent       string
+	taskType     string
+	done         bool
+	stepIndex    int
+	toolSequence []string
 }
 
 func newTaskHandle(ctx context.Context, riq *RouteIQ, intent string) *TaskHandle {
@@ -61,6 +62,28 @@ func (t *TaskHandle) start() {
 	t.span.SetAttributes(attrs...)
 }
 
+func (t *TaskHandle) recordTool(name string) {
+	t.toolSequence = append(t.toolSequence, name)
+}
+
+func (t *TaskHandle) maxSameToolCount() int {
+	if len(t.toolSequence) == 0 {
+		return 0
+	}
+	maxCount, cur := 1, 1
+	for i := 1; i < len(t.toolSequence); i++ {
+		if t.toolSequence[i] == t.toolSequence[i-1] {
+			cur++
+		} else {
+			cur = 1
+		}
+		if cur > maxCount {
+			maxCount = cur
+		}
+	}
+	return maxCount
+}
+
 // Step starts a reasoning step within this task.
 func (t *TaskHandle) Step(opts ...StepOption) *StepHandle {
 	t.stepIndex++
@@ -72,14 +95,23 @@ func (t *TaskHandle) Step(opts ...StepOption) *StepHandle {
 	return s
 }
 
-// StepOption configures a step.
-type StepOption func(*StepHandle)
-
-// WithAction sets routeiq.step.selected_action.
-func WithAction(action string) StepOption { return func(s *StepHandle) { s.action = action } }
-
-// WithRationale sets routeiq.step.action_rationale.
-func WithRationale(r string) StepOption { return func(s *StepHandle) { s.rationale = r } }
+// Escalate emits a human-escalation span.
+func (t *TaskHandle) Escalate(reason, target string) {
+	riq := t.riq
+	_, span := riq.tracer.Start(t.ctx, fmt.Sprintf("escalation:%s", t.taskID))
+	attrs := append(riq.envelope(t, nil),
+		attribute.String("routeiq.event.type", "8"),
+		attribute.String("routeiq.escalation.triggered", "true"),
+	)
+	if reason != "" {
+		attrs = append(attrs, attribute.String("routeiq.escalation.reason", truncate(reason, 256)))
+	}
+	if target != "" {
+		attrs = append(attrs, attribute.String("routeiq.escalation.target", target))
+	}
+	span.SetAttributes(attrs...)
+	span.End()
+}
 
 // Complete marks the task as successfully done.
 func (t *TaskHandle) Complete(opts ...CompleteOption) {
@@ -105,8 +137,18 @@ func (t *TaskHandle) finish(status string, c *completeConfig) {
 	}
 	t.done = true
 	attrs := []attribute.KeyValue{attribute.String("routeiq.task.completion_status", status)}
-	if c.tokens > 0 {
-		attrs = append(attrs, attribute.Int("routeiq.task.total_tokens", c.tokens))
+	if c.tokensIn > 0 {
+		attrs = append(attrs, attribute.Int("routeiq.task.tokens_in", c.tokensIn))
+	}
+	if c.tokensOut > 0 {
+		attrs = append(attrs, attribute.Int("routeiq.task.tokens_out", c.tokensOut))
+	}
+	total := c.tokens
+	if total == 0 && (c.tokensIn > 0 || c.tokensOut > 0) {
+		total = c.tokensIn + c.tokensOut
+	}
+	if total > 0 {
+		attrs = append(attrs, attribute.Int("routeiq.task.total_tokens", total))
 	}
 	if c.costUSD > 0 {
 		attrs = append(attrs, attribute.Float64("routeiq.task.cost_usd", c.costUSD))
@@ -116,6 +158,9 @@ func (t *TaskHandle) finish(status string, c *completeConfig) {
 	}
 	if c.failureCategory != "" {
 		attrs = append(attrs, attribute.String("routeiq.task.failure_category", c.failureCategory))
+	}
+	if same := t.maxSameToolCount(); same > 1 {
+		attrs = append(attrs, attribute.Int("routeiq.same_tool_count", same))
 	}
 	t.span.SetAttributes(attrs...)
 }
@@ -133,13 +178,21 @@ type CompleteOption func(*completeConfig)
 
 type completeConfig struct {
 	tokens          int
+	tokensIn        int
+	tokensOut       int
 	costUSD         float64
 	cohort          string
 	failureCategory string
 }
 
-// WithTokens sets routeiq.task.total_tokens.
+// WithTokens sets routeiq.task.total_tokens directly.
 func WithTokens(n int) CompleteOption { return func(c *completeConfig) { c.tokens = n } }
+
+// WithTokensIn sets routeiq.task.tokens_in (auto-sums with tokensOut for total).
+func WithTokensIn(n int) CompleteOption { return func(c *completeConfig) { c.tokensIn = n } }
+
+// WithTokensOut sets routeiq.task.tokens_out (auto-sums with tokensIn for total).
+func WithTokensOut(n int) CompleteOption { return func(c *completeConfig) { c.tokensOut = n } }
 
 // WithCostUSD sets routeiq.task.cost_usd.
 func WithCostUSD(usd float64) CompleteOption { return func(c *completeConfig) { c.costUSD = usd } }
@@ -156,6 +209,7 @@ type StepHandle struct {
 	stepID    string
 	action    string
 	rationale string
+	model     string
 	index     int
 	done      bool
 }
@@ -172,6 +226,9 @@ func (s *StepHandle) start() {
 	if s.rationale != "" {
 		attrs = append(attrs, attribute.String("routeiq.step.action_rationale", s.rationale))
 	}
+	if s.model != "" {
+		attrs = append(attrs, attribute.String("routeiq.step.model", s.model))
+	}
 	s.span.SetAttributes(attrs...)
 }
 
@@ -185,19 +242,42 @@ func (s *StepHandle) Tool(name string, opts ...ToolOption) *ToolHandle {
 	return th
 }
 
-// ToolOption configures a tool call.
-type ToolOption func(*ToolHandle)
-
-// WithArgs sets the arguments for hashing.
-func WithArgs(args map[string]any) ToolOption {
-	return func(t *ToolHandle) { t.args = args }
+// Guardrail emits a guardrail check span.
+func (s *StepHandle) Guardrail(guardrailType string, blocked bool) {
+	riq := s.task.riq
+	blockedStr := "false"
+	if blocked {
+		blockedStr = "true"
+	}
+	_, span := riq.tracer.Start(s.task.ctx, fmt.Sprintf("guardrail:%s", guardrailType))
+	attrs := append(riq.envelope(s.task, s),
+		attribute.String("routeiq.event.type", "9"),
+		attribute.String("routeiq.guardrail.type", guardrailType),
+		attribute.String("routeiq.guardrail.blocked", blockedStr),
+	)
+	span.SetAttributes(attrs...)
+	span.End()
 }
 
-// WithPermission sets routeiq.tool.permission_level.
-func WithPermission(p string) ToolOption { return func(t *ToolHandle) { t.permission = p } }
+// Replan marks that the agent replanned mid-step.
+func (s *StepHandle) Replan(reason string) {
+	if s.span == nil {
+		return
+	}
+	s.span.SetAttributes(
+		attribute.String("routeiq.replan.triggered", "true"),
+		attribute.String("routeiq.replan.reason", truncate(reason, 256)),
+	)
+}
 
 // Complete marks the step as successfully completed.
-func (s *StepHandle) Complete() { s.finish(completionSuccess, "") }
+func (s *StepHandle) Complete(opts ...StepCompleteOption) {
+	c := &stepCompleteConfig{}
+	for _, o := range opts {
+		o(c)
+	}
+	s.finish(completionSuccess, "", c)
+}
 
 // Fail marks the step as failed.
 func (s *StepHandle) Fail(category ...string) {
@@ -205,10 +285,10 @@ func (s *StepHandle) Fail(category ...string) {
 	if len(category) > 0 {
 		cat = category[0]
 	}
-	s.finish(completionFailure, cat)
+	s.finish(completionFailure, cat, nil)
 }
 
-func (s *StepHandle) finish(status, category string) {
+func (s *StepHandle) finish(status, category string, c *stepCompleteConfig) {
 	if s.done {
 		return
 	}
@@ -216,6 +296,14 @@ func (s *StepHandle) finish(status, category string) {
 	attrs := []attribute.KeyValue{attribute.String("routeiq.step.completion_status", status)}
 	if category != "" {
 		attrs = append(attrs, attribute.String("routeiq.step.failure_category", category))
+	}
+	if c != nil {
+		if c.tokensIn > 0 {
+			attrs = append(attrs, attribute.Int("routeiq.step.tokens_in", c.tokensIn))
+		}
+		if c.tokensOut > 0 {
+			attrs = append(attrs, attribute.Int("routeiq.step.tokens_out", c.tokensOut))
+		}
 	}
 	s.span.SetAttributes(attrs...)
 }
@@ -226,6 +314,36 @@ func (s *StepHandle) End() {
 		s.Complete()
 	}
 	s.span.End()
+}
+
+// StepOption configures a step.
+type StepOption func(*StepHandle)
+
+// WithAction sets routeiq.step.selected_action.
+func WithAction(action string) StepOption { return func(s *StepHandle) { s.action = action } }
+
+// WithRationale sets routeiq.step.action_rationale.
+func WithRationale(r string) StepOption { return func(s *StepHandle) { s.rationale = r } }
+
+// WithModel sets routeiq.step.model (per-step model override).
+func WithModel(m string) StepOption { return func(s *StepHandle) { s.model = m } }
+
+// StepCompleteOption configures step completion.
+type StepCompleteOption func(*stepCompleteConfig)
+
+type stepCompleteConfig struct {
+	tokensIn  int
+	tokensOut int
+}
+
+// WithStepTokensIn sets routeiq.step.tokens_in.
+func WithStepTokensIn(n int) StepCompleteOption {
+	return func(c *stepCompleteConfig) { c.tokensIn = n }
+}
+
+// WithStepTokensOut sets routeiq.step.tokens_out.
+func WithStepTokensOut(n int) StepCompleteOption {
+	return func(c *stepCompleteConfig) { c.tokensOut = n }
 }
 
 // ── ToolHandle ────────────────────────────────────────────────────────────────
@@ -243,6 +361,7 @@ type ToolHandle struct {
 
 func (t *ToolHandle) begin() {
 	_, t.span = t.step.task.riq.tracer.Start(t.step.task.ctx, fmt.Sprintf("tool:%s", t.name))
+	t.step.task.recordTool(t.name)
 
 	argsHash := argsHash(t.args)
 	perm := permissionLevel[t.permission]
@@ -258,24 +377,43 @@ func (t *ToolHandle) begin() {
 	t.span.SetAttributes(attrs...)
 }
 
+// ToolOption configures a tool call.
+type ToolOption func(*ToolHandle)
+
+// WithArgs sets the arguments for hashing.
+func WithArgs(args map[string]any) ToolOption {
+	return func(t *ToolHandle) { t.args = args }
+}
+
+// WithPermission sets routeiq.tool.permission_level.
+func WithPermission(p string) ToolOption { return func(t *ToolHandle) { t.permission = p } }
+
 // Success records a successful tool result.
-func (t *ToolHandle) Success(latencyMs ...float64) {
-	t.finish(toolSuccess, "", latencyMs...)
+func (t *ToolHandle) Success(opts ...ToolResultOption) {
+	c := &toolFinishConfig{}
+	for _, o := range opts {
+		o(c)
+	}
+	t.finish(toolSuccess, "", c)
 }
 
 // Fail records a failed tool result.
-func (t *ToolHandle) Fail(errorCode string, latencyMs ...float64) {
-	t.finish(toolFailure, errorCode, latencyMs...)
+func (t *ToolHandle) Fail(errorCode string, opts ...ToolResultOption) {
+	c := &toolFinishConfig{}
+	for _, o := range opts {
+		o(c)
+	}
+	t.finish(toolFailure, errorCode, c)
 }
 
-func (t *ToolHandle) finish(status, errorCode string, latencyMs ...float64) {
+func (t *ToolHandle) finish(status, errorCode string, c *toolFinishConfig) {
 	if t.done {
 		return
 	}
 	t.done = true
 	ms := float64(time.Since(t.start).Milliseconds())
-	if len(latencyMs) > 0 {
-		ms = latencyMs[0]
+	if c != nil && c.latencyMs != nil {
+		ms = *c.latencyMs
 	}
 	attrs := []attribute.KeyValue{
 		attribute.String("routeiq.tool.result_status", status),
@@ -283,6 +421,17 @@ func (t *ToolHandle) finish(status, errorCode string, latencyMs ...float64) {
 	}
 	if errorCode != "" {
 		attrs = append(attrs, attribute.String("routeiq.tool.error_code", errorCode))
+	}
+	if c != nil {
+		if c.retryCount != nil {
+			attrs = append(attrs, attribute.Int("routeiq.tool.retry_count", *c.retryCount))
+		}
+		if c.tokensIn != nil {
+			attrs = append(attrs, attribute.Int("routeiq.tool.tokens_in", *c.tokensIn))
+		}
+		if c.tokensOut != nil {
+			attrs = append(attrs, attribute.Int("routeiq.tool.tokens_out", *c.tokensOut))
+		}
 	}
 	t.span.SetAttributes(attrs...)
 }
@@ -293,6 +442,36 @@ func (t *ToolHandle) End() {
 		t.Success()
 	}
 	t.span.End()
+}
+
+// ToolResultOption configures a tool result.
+type ToolResultOption func(*toolFinishConfig)
+
+type toolFinishConfig struct {
+	latencyMs  *float64
+	retryCount *int
+	tokensIn   *int
+	tokensOut  *int
+}
+
+// WithLatencyMs sets an explicit latency in milliseconds.
+func WithLatencyMs(ms float64) ToolResultOption {
+	return func(c *toolFinishConfig) { c.latencyMs = &ms }
+}
+
+// WithRetryCount sets routeiq.tool.retry_count.
+func WithRetryCount(n int) ToolResultOption {
+	return func(c *toolFinishConfig) { c.retryCount = &n }
+}
+
+// WithToolTokensIn sets routeiq.tool.tokens_in.
+func WithToolTokensIn(n int) ToolResultOption {
+	return func(c *toolFinishConfig) { c.tokensIn = &n }
+}
+
+// WithToolTokensOut sets routeiq.tool.tokens_out.
+func WithToolTokensOut(n int) ToolResultOption {
+	return func(c *toolFinishConfig) { c.tokensOut = &n }
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

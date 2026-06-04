@@ -29,6 +29,8 @@ module RouteIQ
       perm      = PERMISSION.fetch(permission, "1")
       riq       = step.task.riq
 
+      step.task.record_tool(name)
+
       @span = riq.tracer.start_span("tool:#{name}", attributes: {
         "routeiq.event.type"             => "7",
         **riq.envelope(step.task, step),
@@ -38,12 +40,13 @@ module RouteIQ
       })
     end
 
-    def success(latency_ms: nil)
-      finish(TOOL_SUCCESS, latency_ms: latency_ms)
+    def success(latency_ms: nil, tokens_in: nil, tokens_out: nil)
+      finish(TOOL_SUCCESS, latency_ms: latency_ms, tokens_in: tokens_in, tokens_out: tokens_out)
     end
 
-    def fail(error_code: "", latency_ms: nil)
-      finish(TOOL_FAILURE, error_code: error_code, latency_ms: latency_ms)
+    def fail(error_code: "", latency_ms: nil, retry_count: nil, tokens_in: nil, tokens_out: nil)
+      finish(TOOL_FAILURE, error_code: error_code, latency_ms: latency_ms,
+             retry_count: retry_count, tokens_in: tokens_in, tokens_out: tokens_out)
     end
 
     def end_span
@@ -52,7 +55,8 @@ module RouteIQ
 
     private
 
-    def finish(status, error_code: "", latency_ms: nil)
+    def finish(status, error_code: "", latency_ms: nil, retry_count: nil,
+               tokens_in: nil, tokens_out: nil)
       return if @done
       @done = true
       elapsed = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start) * 1000
@@ -60,7 +64,10 @@ module RouteIQ
         "routeiq.tool.result_status" => status,
         "routeiq.tool.latency_ms"    => latency_ms || elapsed
       }
-      attrs["routeiq.tool.error_code"] = error_code unless error_code.empty?
+      attrs["routeiq.tool.error_code"]  = error_code  unless error_code.to_s.empty?
+      attrs["routeiq.tool.retry_count"] = retry_count  if retry_count
+      attrs["routeiq.tool.tokens_in"]   = tokens_in    if tokens_in
+      attrs["routeiq.tool.tokens_out"]  = tokens_out   if tokens_out
       @span&.add_attributes(attrs)
     end
   end
@@ -70,7 +77,7 @@ module RouteIQ
   class StepHandle
     attr_reader :step_id, :task
 
-    def initialize(task, action: nil, rationale: nil, index: 1)
+    def initialize(task, action: nil, rationale: nil, model: nil, index: 1)
       @task     = task
       @step_id  = SecureRandom.uuid
       @done     = false
@@ -83,6 +90,7 @@ module RouteIQ
       }
       attrs["routeiq.step.selected_action"]   = action    if action
       attrs["routeiq.step.action_rationale"]  = rationale if rationale
+      attrs["routeiq.step.model"]             = model     if model
 
       @span = riq.tracer.start_span("step:#{@step_id}", attributes: attrs)
     end
@@ -104,8 +112,26 @@ module RouteIQ
       end
     end
 
-    def complete
-      finish(COMPLETION_SUCCESS)
+    def guardrail(type, blocked)
+      riq = @task.riq
+      span = riq.tracer.start_span("guardrail:#{type}", attributes: {
+        "routeiq.event.type"       => "9",
+        **riq.envelope(@task, self),
+        "routeiq.guardrail.type"    => type,
+        "routeiq.guardrail.blocked" => blocked.to_s
+      })
+      span.finish
+    end
+
+    def replan(reason)
+      @span&.add_attributes(
+        "routeiq.replan.triggered" => "true",
+        "routeiq.replan.reason"    => reason[0, 256]
+      )
+    end
+
+    def complete(tokens_in: nil, tokens_out: nil)
+      finish(COMPLETION_SUCCESS, tokens_in: tokens_in, tokens_out: tokens_out)
     end
 
     def fail(category: "")
@@ -118,11 +144,13 @@ module RouteIQ
 
     private
 
-    def finish(status, failure_category: "")
+    def finish(status, failure_category: "", tokens_in: nil, tokens_out: nil)
       return if @done
       @done = true
       attrs = {"routeiq.step.completion_status" => status}
-      attrs["routeiq.step.failure_category"] = failure_category unless failure_category.empty?
+      attrs["routeiq.step.failure_category"] = failure_category unless failure_category.to_s.empty?
+      attrs["routeiq.step.tokens_in"]        = tokens_in        if tokens_in
+      attrs["routeiq.step.tokens_out"]       = tokens_out       if tokens_out
       @span&.add_attributes(attrs)
     end
   end
@@ -133,13 +161,14 @@ module RouteIQ
     attr_reader :task_id, :run_id, :riq
 
     def initialize(riq, intent, task_type: nil)
-      @riq         = riq
-      @intent      = intent
-      @task_type   = task_type
-      @task_id     = SecureRandom.uuid
-      @run_id      = SecureRandom.uuid
-      @done        = false
-      @step_index  = 0
+      @riq          = riq
+      @intent       = intent
+      @task_type    = task_type
+      @task_id      = SecureRandom.uuid
+      @run_id       = SecureRandom.uuid
+      @done         = false
+      @step_index   = 0
+      @tool_sequence = []
 
       attrs = {
         "routeiq.event.type"        => "1",
@@ -151,9 +180,24 @@ module RouteIQ
       @span = riq.tracer.start_span("task:#{@task_id}", attributes: attrs)
     end
 
-    def step(action: nil, rationale: nil, &block)
+    def record_tool(name)
+      @tool_sequence << name
+    end
+
+    def max_same_tool_count
+      return 0 if @tool_sequence.empty?
+      max_count = cur = 1
+      (1...@tool_sequence.length).each do |i|
+        cur = @tool_sequence[i] == @tool_sequence[i - 1] ? cur + 1 : 1
+        max_count = cur if cur > max_count
+      end
+      max_count
+    end
+
+    def step(action: nil, rationale: nil, model: nil, &block)
       @step_index += 1
-      handle = StepHandle.new(self, action: action, rationale: rationale, index: @step_index)
+      handle = StepHandle.new(self, action: action, rationale: rationale,
+                              model: model, index: @step_index)
       if block_given?
         begin
           block.call(handle)
@@ -169,8 +213,22 @@ module RouteIQ
       end
     end
 
-    def complete(tokens: 0, cost_usd: nil, cohort: nil)
-      finish(COMPLETION_SUCCESS, tokens: tokens, cost_usd: cost_usd, cohort: cohort)
+    def escalate(reason: nil, target: nil)
+      riq = @riq
+      span = riq.tracer.start_span("escalation:#{@task_id}", attributes: {
+        "routeiq.event.type"             => "8",
+        **riq.envelope(self),
+        "routeiq.escalation.triggered"   => "true"
+      }.tap do |attrs|
+        attrs["routeiq.escalation.reason"] = reason[0, 256] if reason
+        attrs["routeiq.escalation.target"] = target          if target
+      end)
+      span.finish
+    end
+
+    def complete(tokens: 0, tokens_in: nil, tokens_out: nil, cost_usd: nil, cohort: nil)
+      finish(COMPLETION_SUCCESS, tokens: tokens, tokens_in: tokens_in,
+             tokens_out: tokens_out, cost_usd: cost_usd, cohort: cohort)
     end
 
     def fail(category: "")
@@ -183,14 +241,20 @@ module RouteIQ
 
     private
 
-    def finish(status, tokens: 0, cost_usd: nil, cohort: nil, failure_category: "")
+    def finish(status, tokens: 0, tokens_in: nil, tokens_out: nil,
+               cost_usd: nil, cohort: nil, failure_category: "")
       return if @done
       @done = true
       attrs = {"routeiq.task.completion_status" => status}
-      attrs["routeiq.task.total_tokens"]      = tokens       if tokens > 0
-      attrs["routeiq.task.cost_usd"]          = cost_usd     if cost_usd
-      attrs["routeiq.task.cohort"]            = cohort        if cohort
-      attrs["routeiq.task.failure_category"]  = failure_category unless failure_category.empty?
+      attrs["routeiq.task.tokens_in"]      = tokens_in   if tokens_in
+      attrs["routeiq.task.tokens_out"]     = tokens_out  if tokens_out
+      total = tokens > 0 ? tokens : ((tokens_in || 0) + (tokens_out || 0))
+      attrs["routeiq.task.total_tokens"]   = total       if total > 0
+      attrs["routeiq.task.cost_usd"]       = cost_usd    if cost_usd
+      attrs["routeiq.task.cohort"]         = cohort      if cohort
+      attrs["routeiq.task.failure_category"] = failure_category unless failure_category.to_s.empty?
+      same = max_same_tool_count
+      attrs["routeiq.same_tool_count"] = same if same > 1
       @span&.add_attributes(attrs)
     end
   end

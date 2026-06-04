@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::handles::TaskHandle;
 
-const SDK_VERSION: &str = "0.2.0";
+const SDK_VERSION: &str = "0.3.0";
 
 #[derive(Debug, Clone, Default)]
 pub struct RouteIQOptions {
@@ -19,6 +19,10 @@ pub struct RouteIQOptions {
     pub environment: Option<String>,
     pub agent_version: Option<String>,
     pub api_key: Option<String>,
+    pub system_id: Option<String>,
+    pub user_id: Option<String>,
+    pub slo_success_target: Option<f64>,
+    pub slo_p95_ms_target: Option<f64>,
 }
 
 pub struct RouteIQ {
@@ -28,6 +32,10 @@ pub struct RouteIQ {
     pub(crate) environment: String,
     pub(crate) agent_version: String,
     pub session_id: String,
+    pub(crate) system_id: Option<String>,
+    pub(crate) user_id: Option<String>,
+    pub(crate) slo_success_target: Option<f64>,
+    pub(crate) slo_p95_ms_target: Option<f64>,
     pub(crate) provider: SdkTracerProvider,
 }
 
@@ -58,12 +66,16 @@ impl RouteIQ {
 
     pub fn with_provider(opts: RouteIQOptions, provider: SdkTracerProvider) -> Self {
         RouteIQ {
-            agent_id: opts.agent_id,
-            tenant_id: opts.tenant_id.unwrap_or_else(|| "default".to_string()),
-            model: opts.model,
-            environment: opts.environment.unwrap_or_else(|| "production".to_string()),
-            agent_version: opts.agent_version.unwrap_or_else(|| "1.0.0".to_string()),
-            session_id: Uuid::new_v4().to_string(),
+            agent_id:           opts.agent_id,
+            tenant_id:          opts.tenant_id.unwrap_or_else(|| "default".to_string()),
+            model:              opts.model,
+            environment:        opts.environment.unwrap_or_else(|| "production".to_string()),
+            agent_version:      opts.agent_version.unwrap_or_else(|| "1.0.0".to_string()),
+            session_id:         Uuid::new_v4().to_string(),
+            system_id:          opts.system_id,
+            user_id:            opts.user_id,
+            slo_success_target: opts.slo_success_target,
+            slo_p95_ms_target:  opts.slo_p95_ms_target,
             provider,
         }
     }
@@ -91,6 +103,18 @@ impl RouteIQ {
             KeyValue::new("routeiq.environment", self.environment.clone()),
             KeyValue::new("routeiq.session.id",  self.session_id.clone()),
         ];
+        if let Some(ref sid) = self.system_id {
+            attrs.push(KeyValue::new("routeiq.system.id", sid.clone()));
+        }
+        if let Some(ref uid) = self.user_id {
+            attrs.push(KeyValue::new("routeiq.user.id", uid.clone()));
+        }
+        if let Some(v) = self.slo_success_target {
+            attrs.push(KeyValue::new("routeiq.slo.success_target", v));
+        }
+        if let Some(v) = self.slo_p95_ms_target {
+            attrs.push(KeyValue::new("routeiq.slo.p95_ms_target", v));
+        }
         if let Some(t) = task {
             attrs.push(KeyValue::new("routeiq.task.id", t.task_id.clone()));
             attrs.push(KeyValue::new("routeiq.run.id",  t.run_id.clone()));

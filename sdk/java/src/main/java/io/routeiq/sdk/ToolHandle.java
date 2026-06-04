@@ -24,6 +24,7 @@ public final class ToolHandle implements AutoCloseable {
 
         this.span    = riq.tracer.spanBuilder("tool:" + name).startSpan();
         this.startNs = System.nanoTime();
+        task.recordTool(name);
 
         try (var scope = span.makeCurrent()) {
             riq.envelope(task, step).forEach((k, v) -> span.setAttribute(k, v.toString()));
@@ -34,18 +35,32 @@ public final class ToolHandle implements AutoCloseable {
         }
     }
 
-    public void success()                             { finish("1", null, null); }
-    public void success(double latencyMs)             { finish("1", null, latencyMs); }
-    public void fail(String errorCode)                { finish("2", errorCode, null); }
-    public void fail(String errorCode, double latMs)  { finish("2", errorCode, latMs); }
+    public void success()                              { finish("1", null, null, null, null, null); }
+    public void success(double latencyMs)              { finish("1", null, latencyMs, null, null, null); }
+    public void success(double latencyMs, int tokensIn, int tokensOut) {
+        finish("1", null, latencyMs, null, tokensIn, tokensOut);
+    }
+    public void successTokens(int tokensIn, int tokensOut) {
+        finish("1", null, null, null, tokensIn, tokensOut);
+    }
 
-    private void finish(String status, String errorCode, Double latencyMs) {
+    public void fail(String errorCode)                 { finish("2", errorCode, null, null, null, null); }
+    public void fail(String errorCode, double latMs)   { finish("2", errorCode, latMs, null, null, null); }
+    public void failRetry(String errorCode, int retryCount) {
+        finish("2", errorCode, null, retryCount, null, null);
+    }
+
+    private void finish(String status, String errorCode, Double latencyMs,
+                        Integer retryCount, Integer tokensIn, Integer tokensOut) {
         if (done) return;
         done = true;
         double elapsed = (System.nanoTime() - startNs) / 1_000_000.0;
         span.setAttribute("routeiq.tool.result_status", status);
         span.setAttribute("routeiq.tool.latency_ms",    latencyMs != null ? latencyMs : elapsed);
-        if (errorCode != null) span.setAttribute("routeiq.tool.error_code", errorCode);
+        if (errorCode  != null) span.setAttribute("routeiq.tool.error_code",  errorCode);
+        if (retryCount != null) span.setAttribute("routeiq.tool.retry_count", (long) retryCount.intValue());
+        if (tokensIn   != null) span.setAttribute("routeiq.tool.tokens_in",   (long) tokensIn.intValue());
+        if (tokensOut  != null) span.setAttribute("routeiq.tool.tokens_out",  (long) tokensOut.intValue());
     }
 
     @Override

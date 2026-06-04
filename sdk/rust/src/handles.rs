@@ -3,6 +3,7 @@ use opentelemetry::{
     KeyValue,
 };
 use sha2::{Digest, Sha256};
+use std::cell::RefCell;
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -26,6 +27,8 @@ fn permission_level(p: &str) -> &'static str {
 #[derive(Default)]
 pub struct CompleteOpts {
     pub tokens: i64,
+    pub tokens_in: i64,
+    pub tokens_out: i64,
     pub cost_usd: Option<f64>,
     pub cohort: Option<String>,
 }
@@ -68,6 +71,8 @@ impl ToolHandle {
             opts.permission.as_deref().unwrap_or("READ_ONLY"),
         );
 
+        task.record_tool(name);
+
         let tracer = riq.tracer();
         let mut span = tracer.start(format!("tool:{name}"));
         let mut attrs = riq.envelope_attrs(Some(task), Some(step_id));
@@ -83,14 +88,23 @@ impl ToolHandle {
     }
 
     pub fn success(&mut self, latency_ms: Option<f64>) {
-        self.finish(TOOL_SUCCESS, None, latency_ms);
+        self.finish(TOOL_SUCCESS, None, latency_ms, None, None, None);
+    }
+
+    pub fn success_tokens(&mut self, latency_ms: Option<f64>, tokens_in: i64, tokens_out: i64) {
+        self.finish(TOOL_SUCCESS, None, latency_ms, None, Some(tokens_in), Some(tokens_out));
     }
 
     pub fn fail(&mut self, error_code: Option<&str>, latency_ms: Option<f64>) {
-        self.finish(TOOL_FAILURE, error_code, latency_ms);
+        self.finish(TOOL_FAILURE, error_code, latency_ms, None, None, None);
     }
 
-    fn finish(&mut self, status: &str, error_code: Option<&str>, latency_ms: Option<f64>) {
+    pub fn fail_retry(&mut self, error_code: Option<&str>, latency_ms: Option<f64>, retry_count: i64) {
+        self.finish(TOOL_FAILURE, error_code, latency_ms, Some(retry_count), None, None);
+    }
+
+    fn finish(&mut self, status: &str, error_code: Option<&str>, latency_ms: Option<f64>,
+              retry_count: Option<i64>, tokens_in: Option<i64>, tokens_out: Option<i64>) {
         if self.done { return; }
         self.done = true;
         let elapsed = self.start.elapsed().as_secs_f64() * 1000.0;
@@ -100,6 +114,15 @@ impl ToolHandle {
         ];
         if let Some(code) = error_code {
             attrs.push(KeyValue::new("routeiq.tool.error_code", code.to_string()));
+        }
+        if let Some(rc) = retry_count {
+            attrs.push(KeyValue::new("routeiq.tool.retry_count", rc));
+        }
+        if let Some(ti) = tokens_in {
+            attrs.push(KeyValue::new("routeiq.tool.tokens_in", ti));
+        }
+        if let Some(to) = tokens_out {
+            attrs.push(KeyValue::new("routeiq.tool.tokens_out", to));
         }
         self.span.set_attributes(attrs);
     }
@@ -126,6 +149,7 @@ impl<'task> StepHandle<'task> {
         task: &'task TaskHandle,
         action: Option<&str>,
         rationale: Option<&str>,
+        model: Option<&str>,
         index: i64,
     ) -> Self {
         let step_id = Uuid::new_v4().to_string();
@@ -143,6 +167,9 @@ impl<'task> StepHandle<'task> {
         if let Some(r) = rationale {
             attrs.push(KeyValue::new("routeiq.step.action_rationale", r.to_string()));
         }
+        if let Some(m) = model {
+            attrs.push(KeyValue::new("routeiq.step.model", m.to_string()));
+        }
         span.set_attributes(attrs);
 
         StepHandle { riq, task, step_id, span, done: false }
@@ -152,20 +179,51 @@ impl<'task> StepHandle<'task> {
         ToolHandle::new(self.riq, self.task, &self.step_id, name, opts)
     }
 
+    pub fn guardrail(&self, guardrail_type: &str, blocked: bool) {
+        let tracer = self.riq.tracer();
+        let mut attrs = self.riq.envelope_attrs(Some(self.task), Some(&self.step_id));
+        attrs.extend([
+            KeyValue::new("routeiq.event.type", "9"),
+            KeyValue::new("routeiq.guardrail.type", guardrail_type.to_string()),
+            KeyValue::new("routeiq.guardrail.blocked", if blocked { "true" } else { "false" }),
+        ]);
+        let mut span = tracer.start(format!("guardrail:{guardrail_type}"));
+        span.set_attributes(attrs);
+        span.end();
+    }
+
+    pub fn replan(&mut self, reason: &str) {
+        self.span.set_attributes(vec![
+            KeyValue::new("routeiq.replan.triggered", "true"),
+            KeyValue::new("routeiq.replan.reason", reason.chars().take(256).collect::<String>()),
+        ]);
+    }
+
     pub fn complete(&mut self) {
-        self.finish(COMPLETION_SUCCESS, None);
+        self.finish(COMPLETION_SUCCESS, None, None, None);
+    }
+
+    pub fn complete_tokens(&mut self, tokens_in: i64, tokens_out: i64) {
+        self.finish(COMPLETION_SUCCESS, None, Some(tokens_in), Some(tokens_out));
     }
 
     pub fn fail(&mut self, category: Option<&str>) {
-        self.finish(COMPLETION_FAILURE, category);
+        self.finish(COMPLETION_FAILURE, category, None, None);
     }
 
-    fn finish(&mut self, status: &str, category: Option<&str>) {
+    fn finish(&mut self, status: &str, category: Option<&str>,
+              tokens_in: Option<i64>, tokens_out: Option<i64>) {
         if self.done { return; }
         self.done = true;
         let mut attrs = vec![KeyValue::new("routeiq.step.completion_status", status.to_string())];
         if let Some(cat) = category {
             attrs.push(KeyValue::new("routeiq.step.failure_category", cat.to_string()));
+        }
+        if let Some(ti) = tokens_in {
+            attrs.push(KeyValue::new("routeiq.step.tokens_in", ti));
+        }
+        if let Some(to) = tokens_out {
+            attrs.push(KeyValue::new("routeiq.step.tokens_out", to));
         }
         self.span.set_attributes(attrs);
     }
@@ -185,6 +243,7 @@ pub struct TaskHandle {
     span: opentelemetry_sdk::trace::Span,
     done: bool,
     step_index: i64,
+    tool_sequence: RefCell<Vec<String>>,
 }
 
 impl TaskHandle {
@@ -207,7 +266,15 @@ impl TaskHandle {
         }
         span.set_attributes(attrs);
 
-        TaskHandle { riq, task_id, run_id, span, done: false, step_index: 0 }
+        TaskHandle {
+            riq,
+            task_id,
+            run_id,
+            span,
+            done: false,
+            step_index: 0,
+            tool_sequence: RefCell::new(Vec::new()),
+        }
     }
 
     fn riq(&self) -> &RouteIQ {
@@ -215,9 +282,50 @@ impl TaskHandle {
         unsafe { &*self.riq }
     }
 
+    pub(crate) fn record_tool(&self, name: &str) {
+        self.tool_sequence.borrow_mut().push(name.to_string());
+    }
+
+    fn max_same_tool_count(&self) -> i64 {
+        let seq = self.tool_sequence.borrow();
+        if seq.is_empty() { return 0; }
+        let mut max_count: i64 = 1;
+        let mut cur: i64 = 1;
+        for i in 1..seq.len() {
+            if seq[i] == seq[i - 1] { cur += 1; } else { cur = 1; }
+            if cur > max_count { max_count = cur; }
+        }
+        max_count
+    }
+
     pub fn step(&mut self, action: Option<&str>, rationale: Option<&str>) -> StepHandle<'_> {
         self.step_index += 1;
-        StepHandle::new(self.riq(), self, action, rationale, self.step_index)
+        StepHandle::new(self.riq(), self, action, rationale, None, self.step_index)
+    }
+
+    pub fn step_model(&mut self, action: Option<&str>, rationale: Option<&str>, model: Option<&str>) -> StepHandle<'_> {
+        self.step_index += 1;
+        StepHandle::new(self.riq(), self, action, rationale, model, self.step_index)
+    }
+
+    pub fn escalate(&self, reason: Option<&str>, target: Option<&str>) {
+        let riq = self.riq();
+        let tracer = riq.tracer();
+        let mut attrs = riq.envelope_attrs(Some(self), None);
+        attrs.extend([
+            KeyValue::new("routeiq.event.type", "8"),
+            KeyValue::new("routeiq.escalation.triggered", "true"),
+        ]);
+        if let Some(r) = reason {
+            attrs.push(KeyValue::new("routeiq.escalation.reason",
+                r.chars().take(256).collect::<String>()));
+        }
+        if let Some(t) = target {
+            attrs.push(KeyValue::new("routeiq.escalation.target", t.to_string()));
+        }
+        let mut span = tracer.start(format!("escalation:{}", self.task_id));
+        span.set_attributes(attrs);
+        span.end();
     }
 
     pub fn complete(&mut self, opts: CompleteOpts) {
@@ -232,8 +340,16 @@ impl TaskHandle {
         if self.done { return; }
         self.done = true;
         let mut attrs = vec![KeyValue::new("routeiq.task.completion_status", status.to_string())];
-        if opts.tokens > 0 {
-            attrs.push(KeyValue::new("routeiq.task.total_tokens", opts.tokens));
+        if opts.tokens_in > 0 {
+            attrs.push(KeyValue::new("routeiq.task.tokens_in", opts.tokens_in));
+        }
+        if opts.tokens_out > 0 {
+            attrs.push(KeyValue::new("routeiq.task.tokens_out", opts.tokens_out));
+        }
+        let total = if opts.tokens > 0 { opts.tokens }
+                    else { opts.tokens_in + opts.tokens_out };
+        if total > 0 {
+            attrs.push(KeyValue::new("routeiq.task.total_tokens", total));
         }
         if let Some(cost) = opts.cost_usd {
             attrs.push(KeyValue::new("routeiq.task.cost_usd", cost));
@@ -243,6 +359,10 @@ impl TaskHandle {
         }
         if let Some(cat) = failure_category {
             attrs.push(KeyValue::new("routeiq.task.failure_category", cat.to_string()));
+        }
+        let same = self.max_same_tool_count();
+        if same > 1 {
+            attrs.push(KeyValue::new("routeiq.same_tool_count", same));
         }
         self.span.set_attributes(attrs);
     }

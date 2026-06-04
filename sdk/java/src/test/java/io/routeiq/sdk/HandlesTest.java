@@ -38,11 +38,13 @@ class HandlesTest {
     }
 
     private String attr(SpanData span, String key) {
-        var v = span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.stringKey(key));
-        return v != null ? v : span.getAttributes().get(
-                io.opentelemetry.api.common.AttributeKey.longKey(key)) != null
-                ? String.valueOf(span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.longKey(key)))
-                : null;
+        var sv = span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.stringKey(key));
+        if (sv != null) return sv;
+        var lv = span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.longKey(key));
+        if (lv != null) return String.valueOf(lv);
+        var dv = span.getAttributes().get(io.opentelemetry.api.common.AttributeKey.doubleKey(key));
+        if (dv != null) return String.valueOf(dv);
+        return null;
     }
 
     // ── TaskHandle ────────────────────────────────────────────────────────
@@ -214,5 +216,118 @@ class HandlesTest {
                 .distinct().toList();
         assertEquals(1, ids.size());
         assertEquals(riq.sessionId, ids.get(0));
+    }
+
+    // ── v0.3.0 signals ────────────────────────────────────────────────────────
+
+    @Test
+    void tool_retryCount() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step()) {
+                try (var tool = step.tool("db_query")) {
+                    tool.failRetry("TIMEOUT", 3);
+                }
+            }
+        }
+        var span = findSpanNamed("tool:db_query");
+        assertEquals("3", attr(span, "routeiq.tool.retry_count"));
+    }
+
+    @Test
+    void tool_tokenSplit() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step()) {
+                try (var tool = step.tool("llm")) {
+                    tool.successTokens(100, 200);
+                }
+            }
+        }
+        var span = findSpanNamed("tool:llm");
+        assertEquals("100", attr(span, "routeiq.tool.tokens_in"));
+        assertEquals("200", attr(span, "routeiq.tool.tokens_out"));
+    }
+
+    @Test
+    void task_sameToolCount() {
+        try (var task = riq.task("q")) {
+            for (int i = 0; i < 4; i++) {
+                try (var step = task.step()) {
+                    try (var tool = step.tool("search")) { }
+                }
+            }
+            task.complete();
+        }
+        var span = findSpan("task:");
+        assertEquals("4", attr(span, "routeiq.same_tool_count"));
+    }
+
+    @Test
+    void task_sameToolCountNotEmittedForDistinct() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step()) {
+                try (var tool = step.tool("search")) { }
+            }
+            try (var step = task.step()) {
+                try (var tool = step.tool("write")) { }
+            }
+            task.complete();
+        }
+        var span = findSpan("task:");
+        assertNull(attr(span, "routeiq.same_tool_count"));
+    }
+
+    @Test
+    void task_escalation() {
+        try (var task = riq.task("refund")) {
+            task.escalate("amount_too_large", "human_review");
+        }
+        var span = findSpan("escalation:");
+        assertEquals("true",          attr(span, "routeiq.escalation.triggered"));
+        assertEquals("amount_too_large", attr(span, "routeiq.escalation.reason"));
+        assertEquals("human_review",  attr(span, "routeiq.escalation.target"));
+    }
+
+    @Test
+    void step_guardrail() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step()) {
+                step.guardrail("pii_filter", true);
+            }
+        }
+        var span = findSpan("guardrail:");
+        assertEquals("pii_filter", attr(span, "routeiq.guardrail.type"));
+        assertEquals("true",       attr(span, "routeiq.guardrail.blocked"));
+    }
+
+    @Test
+    void step_replan() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step("search", null)) {
+                step.replan("search_failed_switching_to_cache");
+            }
+        }
+        var span = findSpan("step:");
+        assertEquals("true",                             attr(span, "routeiq.replan.triggered"));
+        assertEquals("search_failed_switching_to_cache", attr(span, "routeiq.replan.reason"));
+    }
+
+    @Test
+    void step_modelOverride() {
+        try (var task = riq.task("q")) {
+            try (var step = task.step(null, null, "claude-opus-4-5")) { }
+        }
+        var span = findSpan("step:");
+        assertEquals("claude-opus-4-5", attr(span, "routeiq.step.model"));
+    }
+
+    @Test
+    void task_tokenSplitAutoSums() {
+        try (var task = riq.task("q")) {
+            task.complete(300, 700);
+        }
+        var span = findSpan("task:");
+        assertEquals("300",  attr(span, "routeiq.task.tokens_in"));
+        assertEquals("700",  attr(span, "routeiq.task.tokens_out"));
+        assertEquals("1000", attr(span, "routeiq.task.total_tokens"));
     }
 }

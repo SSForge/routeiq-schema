@@ -15,14 +15,22 @@ module RouteIQ
       model: nil,
       environment: "production",
       agent_version: "1.0.0",
-      api_key: nil
+      api_key: nil,
+      system_id: nil,
+      user_id: nil,
+      slo_success_target: nil,
+      slo_p95_ms_target: nil
     )
-      @agent_id      = agent_id
-      @tenant_id     = tenant_id
-      @model         = model
-      @environment   = environment
-      @agent_version = agent_version
-      @session_id    = SecureRandom.uuid
+      @agent_id           = agent_id
+      @tenant_id          = tenant_id
+      @model              = model
+      @environment        = environment
+      @agent_version      = agent_version
+      @session_id         = SecureRandom.uuid
+      @system_id          = system_id
+      @user_id            = user_id
+      @slo_success_target = slo_success_target
+      @slo_p95_ms_target  = slo_p95_ms_target
 
       OpenTelemetry::SDK.configure do |c|
         c.service_name    = agent_id
@@ -68,6 +76,10 @@ module RouteIQ
         "routeiq.environment" => @environment,
         "routeiq.session.id"  => @session_id
       }
+      attrs["routeiq.system.id"]          = @system_id          if @system_id
+      attrs["routeiq.user.id"]            = @user_id            if @user_id
+      attrs["routeiq.slo.success_target"] = @slo_success_target if @slo_success_target
+      attrs["routeiq.slo.p95_ms_target"]  = @slo_p95_ms_target  if @slo_p95_ms_target
       if task
         attrs["routeiq.task.id"] = task.task_id
         attrs["routeiq.run.id"]  = task.run_id

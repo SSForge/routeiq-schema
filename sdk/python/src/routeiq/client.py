@@ -16,7 +16,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from .handles import TaskHandle
 
-_SDK_VERSION = "0.2.0"
+_SDK_VERSION = "0.3.0"
 
 
 class RouteIQ:
@@ -24,45 +24,56 @@ class RouteIQ:
     One instance per agent process. Handles OTel setup and session tracking.
 
     Args:
-        agent_id:      Identifies this agent in dashboards (e.g. "support-agent-prod")
-        otlp_endpoint: gRPC endpoint for the OTel collector. Default: http://localhost:4317
-                       For RouteIQ SaaS: https://ingest.routeiq.io
-        tenant_id:     Tenant/org identifier. Default: "default"
-        model:         LLM model name — populates routeiq.version.model.name on every span
-        environment:   Deployment environment. Default: "production"
-        agent_version: Your agent's version string. Default: "1.0.0"
-        api_key:       API key for RouteIQ SaaS (adds Authorization header). Optional for
-                       self-hosted / local setups.
+        agent_id:           Identifies this agent in dashboards (e.g. "support-agent-prod")
+        system_id:          Groups this agent under a named system (e.g. "checkout-bot")
+        user_id:            End-user ID for per-user analytics
+        otlp_endpoint:      gRPC endpoint for the OTel collector. Default: http://localhost:4317
+        tenant_id:          Tenant/org identifier. Default: "default"
+        model:              LLM model name — populates routeiq.version.model.name on every span
+        environment:        Deployment environment. Default: "production"
+        agent_version:      Your agent's version string. Default: "1.0.0"
+        api_key:            API key for RouteIQ SaaS (adds Authorization header).
+        slo_success_target: Minimum acceptable success rate (0–1), e.g. 0.95
+        slo_p95_ms_target:  p95 latency SLO in milliseconds, e.g. 2000
 
     Example::
 
         from routeiq import RouteIQ
 
-        riq = RouteIQ(agent_id="my-agent", model="gpt-4o")
+        riq = RouteIQ(agent_id="my-agent", system_id="checkout-bot",
+                      model="gpt-4o", slo_success_target=0.95, slo_p95_ms_target=2000)
 
         with riq.task(intent=user_input) as task:
             with task.step(action="tool_call") as step:
                 with step.tool("search", args={"query": "Paris"}) as tool:
                     result = search("Paris")
-            task.complete(tokens=384, cost_usd=0.002)
+            task.complete(tokens_in=300, tokens_out=84, cost_usd=0.002)
     """
 
     def __init__(
         self,
         agent_id: str,
+        system_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         otlp_endpoint: str = "http://localhost:4317",
         tenant_id: str = "default",
         model: Optional[str] = None,
         environment: str = "production",
         agent_version: str = "1.0.0",
         api_key: Optional[str] = None,
+        slo_success_target: Optional[float] = None,
+        slo_p95_ms_target: Optional[float] = None,
     ):
         self.agent_id = agent_id
+        self.system_id = system_id
+        self.user_id = user_id
         self.tenant_id = tenant_id
         self.model = model
         self.environment = environment
         self.agent_version = agent_version
         self.session_id = str(uuid.uuid4())
+        self.slo_success_target = slo_success_target
+        self.slo_p95_ms_target = slo_p95_ms_target
 
         resource = Resource.create({
             "service.name": agent_id,
@@ -100,11 +111,15 @@ class RouteIQ:
     def _envelope(self, task=None, step=None) -> dict:
         """Shared attributes stamped on every span."""
         attrs: dict = {
-            "routeiq.agent.id":   self.agent_id,
-            "routeiq.tenant.id":  self.tenant_id,
+            "routeiq.agent.id":    self.agent_id,
+            "routeiq.tenant.id":   self.tenant_id,
             "routeiq.environment": self.environment,
-            "routeiq.session.id": self.session_id,
+            "routeiq.session.id":  self.session_id,
         }
+        if self.system_id:
+            attrs["routeiq.system.id"] = self.system_id
+        if self.user_id:
+            attrs["routeiq.user.id"] = self.user_id
         if task is not None:
             attrs["routeiq.task.id"] = task.task_id
             attrs["routeiq.run.id"]  = task.run_id
@@ -114,6 +129,10 @@ class RouteIQ:
             attrs["routeiq.version.model.name"] = self.model
         if self.agent_version:
             attrs["routeiq.version.agent"] = self.agent_version
+        if self.slo_success_target is not None:
+            attrs["routeiq.slo.success_target"] = self.slo_success_target
+        if self.slo_p95_ms_target is not None:
+            attrs["routeiq.slo.p95_ms_target"] = self.slo_p95_ms_target
         return attrs
 
 

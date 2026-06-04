@@ -64,17 +64,40 @@ class ToolHandle:
             "routeiq.tool.arguments_hash": args_hash,
             "routeiq.tool.permission_level": self._permission,
         })
+        # Register with task for same_tool_count tracking
+        self._step._task._record_tool(self.name)
         return self
 
-    def success(self, latency_ms: Optional[float] = None) -> None:
+    def success(
+        self,
+        latency_ms: Optional[float] = None,
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
+    ) -> None:
         """Record a successful tool result."""
-        self._finish(_TOOL_SUCCESS, latency_ms=latency_ms)
+        self._finish(_TOOL_SUCCESS, latency_ms=latency_ms, tokens_in=tokens_in, tokens_out=tokens_out)
 
-    def fail(self, error_code: str = "", latency_ms: Optional[float] = None) -> None:
+    def fail(
+        self,
+        error_code: str = "",
+        latency_ms: Optional[float] = None,
+        retry_count: Optional[int] = None,
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
+    ) -> None:
         """Record a failed tool result."""
-        self._finish(_TOOL_FAILURE, error_code=error_code, latency_ms=latency_ms)
+        self._finish(_TOOL_FAILURE, error_code=error_code, latency_ms=latency_ms,
+                     retry_count=retry_count, tokens_in=tokens_in, tokens_out=tokens_out)
 
-    def _finish(self, status: str, error_code: str = "", latency_ms: Optional[float] = None):
+    def _finish(
+        self,
+        status: str,
+        error_code: str = "",
+        latency_ms: Optional[float] = None,
+        retry_count: Optional[int] = None,
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
+    ):
         if self._done:
             return
         self._done = True
@@ -83,8 +106,10 @@ class ToolHandle:
             "routeiq.tool.result_status": status,
             "routeiq.tool.latency_ms": latency_ms if latency_ms is not None else elapsed,
         }
-        if error_code:
-            attrs["routeiq.tool.error_code"] = error_code
+        if error_code:                   attrs["routeiq.tool.error_code"]  = error_code
+        if retry_count is not None:      attrs["routeiq.tool.retry_count"] = retry_count
+        if tokens_in is not None:        attrs["routeiq.tool.tokens_in"]   = tokens_in
+        if tokens_out is not None:       attrs["routeiq.tool.tokens_out"]  = tokens_out
         if self._span:
             self._span.set_attributes(attrs)
 
@@ -110,12 +135,14 @@ class StepHandle:
         action: Optional[str] = None,
         rationale: Optional[str] = None,
         index: int = 1,
+        model: Optional[str] = None,
     ):
         self._task = task
         self.step_id = str(uuid.uuid4())
         self._action = action
         self._rationale = rationale
         self._index = index
+        self._model = model
         self._span_cm = None
         self._span = None
         self._done = False
@@ -128,10 +155,9 @@ class StepHandle:
             "routeiq.event.type": "4",  # STEP_STARTED
             **riq._envelope(self._task, self),
         }
-        if self._action:
-            attrs["routeiq.step.selected_action"] = self._action
-        if self._rationale:
-            attrs["routeiq.step.action_rationale"] = self._rationale
+        if self._action:    attrs["routeiq.step.selected_action"]  = self._action
+        if self._rationale: attrs["routeiq.step.action_rationale"] = self._rationale
+        if self._model:     attrs["routeiq.step.model"]            = self._model
         attrs["routeiq.step.index"] = self._index
         self._span.set_attributes(attrs)
         return self
@@ -145,21 +171,47 @@ class StepHandle:
         """Start a tool call within this step."""
         return ToolHandle(self, name=name, args=args, permission=permission)
 
-    def complete(self) -> None:
+    def guardrail(self, type: str, blocked: bool) -> None:
+        """Emit a guardrail check span. Call whenever a policy/guardrail fires."""
+        riq = self._task._riq
+        with riq._tracer.start_as_current_span(f"guardrail:{type}") as span:
+            span.set_attributes({
+                "routeiq.event.type": "9",
+                **riq._envelope(self._task, self),
+                "routeiq.guardrail.type":    type,
+                "routeiq.guardrail.blocked": str(blocked).lower(),
+            })
+
+    def replan(self, reason: str) -> None:
+        """Mark that the agent replanned mid-step."""
+        if self._span:
+            self._span.set_attributes({
+                "routeiq.replan.triggered": "true",
+                "routeiq.replan.reason":    reason[:256],
+            })
+
+    def complete(self, tokens_in: Optional[int] = None, tokens_out: Optional[int] = None) -> None:
         """Mark step as successfully completed."""
-        self._finish(_COMPLETION_SUCCESS)
+        self._finish(_COMPLETION_SUCCESS, tokens_in=tokens_in, tokens_out=tokens_out)
 
     def fail(self, category: str = "") -> None:
         """Mark step as failed."""
         self._finish(_COMPLETION_FAILURE, failure_category=category)
 
-    def _finish(self, status: str, failure_category: str = ""):
+    def _finish(
+        self,
+        status: str,
+        failure_category: str = "",
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
+    ):
         if self._done:
             return
         self._done = True
         attrs: dict = {"routeiq.step.completion_status": status}
-        if failure_category:
-            attrs["routeiq.step.failure_category"] = failure_category
+        if failure_category:        attrs["routeiq.step.failure_category"] = failure_category
+        if tokens_in is not None:   attrs["routeiq.step.tokens_in"]        = tokens_in
+        if tokens_out is not None:  attrs["routeiq.step.tokens_out"]       = tokens_out
         if self._span:
             self._span.set_attributes(attrs)
 
@@ -193,6 +245,7 @@ class TaskHandle:
         self._span = None
         self._done = False
         self._step_index = 0
+        self._tool_sequence: list = []
 
     def __enter__(self) -> "TaskHandle":
         self._span_cm = self._riq._tracer.start_as_current_span(f"task:{self.task_id}")
@@ -211,19 +264,51 @@ class TaskHandle:
         self,
         action: Optional[str] = None,
         rationale: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> StepHandle:
         """Start a reasoning step within this task."""
         self._step_index += 1
-        return StepHandle(self, action=action, rationale=rationale, index=self._step_index)
+        return StepHandle(self, action=action, rationale=rationale,
+                          index=self._step_index, model=model)
+
+    def escalate(self, reason: Optional[str] = None, target: Optional[str] = None) -> None:
+        """Emit a human-escalation span. Call when handing off to a human operator."""
+        riq = self._riq
+        with riq._tracer.start_as_current_span(f"escalation:{self.task_id}") as span:
+            attrs: dict = {
+                "routeiq.event.type": "8",
+                **riq._envelope(self),
+                "routeiq.escalation.triggered": "true",
+            }
+            if reason: attrs["routeiq.escalation.reason"] = reason[:256]
+            if target: attrs["routeiq.escalation.target"] = target
+            span.set_attributes(attrs)
+
+    def _record_tool(self, name: str) -> None:
+        """Called by ToolHandle to track tool call sequence for same_tool_count."""
+        self._tool_sequence.append(name)
+
+    def _max_same_tool_count(self) -> int:
+        if not self._tool_sequence:
+            return 0
+        max_count = cur = 1
+        for i in range(1, len(self._tool_sequence)):
+            cur = cur + 1 if self._tool_sequence[i] == self._tool_sequence[i - 1] else 1
+            if cur > max_count:
+                max_count = cur
+        return max_count
 
     def complete(
         self,
         tokens: int = 0,
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
         cost_usd: Optional[float] = None,
         cohort: Optional[str] = None,
     ) -> None:
         """Mark task as successfully completed."""
-        self._finish(_COMPLETION_SUCCESS, tokens=tokens, cost_usd=cost_usd, cohort=cohort)
+        self._finish(_COMPLETION_SUCCESS, tokens=tokens, tokens_in=tokens_in,
+                     tokens_out=tokens_out, cost_usd=cost_usd, cohort=cohort)
 
     def fail(self, category: str = "") -> None:
         """Mark task as failed."""
@@ -233,6 +318,8 @@ class TaskHandle:
         self,
         status: str,
         tokens: int = 0,
+        tokens_in: Optional[int] = None,
+        tokens_out: Optional[int] = None,
         cost_usd: Optional[float] = None,
         cohort: Optional[str] = None,
         failure_category: str = "",
@@ -241,14 +328,18 @@ class TaskHandle:
             return
         self._done = True
         attrs: dict = {"routeiq.task.completion_status": status}
-        if tokens:
-            attrs["routeiq.task.total_tokens"] = tokens
-        if cost_usd is not None:
-            attrs["routeiq.task.cost_usd"] = cost_usd
-        if cohort:
-            attrs["routeiq.task.cohort"] = cohort
-        if failure_category:
-            attrs["routeiq.task.failure_category"] = failure_category
+        if tokens_in is not None:   attrs["routeiq.task.tokens_in"]  = tokens_in
+        if tokens_out is not None:  attrs["routeiq.task.tokens_out"] = tokens_out
+        total = tokens or (
+            (tokens_in + tokens_out) if tokens_in is not None and tokens_out is not None else 0
+        )
+        if total:                   attrs["routeiq.task.total_tokens"]    = total
+        if cost_usd is not None:    attrs["routeiq.task.cost_usd"]        = cost_usd
+        if cohort:                  attrs["routeiq.task.cohort"]          = cohort
+        if failure_category:        attrs["routeiq.task.failure_category"] = failure_category
+        # Emit max consecutive same-tool count for loop detection
+        same_tool_count = self._max_same_tool_count()
+        if same_tool_count > 1:     attrs["routeiq.same_tool_count"] = same_tool_count
         if self._span:
             self._span.set_attributes(attrs)
 

@@ -23,6 +23,10 @@ def riq(monkeypatch):
     client.model = "gpt-4o"
     client.agent_version = "1.0.0"
     client.session_id = str(uuid.uuid4())
+    client.system_id = None
+    client.user_id = None
+    client.slo_success_target = None
+    client.slo_p95_ms_target = None
     from opentelemetry import trace
     client._provider = provider
     client._tracer = trace.get_tracer("routeiq.sdk", tracer_provider=provider)
@@ -256,3 +260,136 @@ def test_session_id_same_across_spans(riq):
     session_ids = {s.attributes.get("routeiq.session.id") for s in all_spans}
     assert len(session_ids) == 1
     assert client.session_id in session_ids
+
+
+# ── New signals (v0.3.0) ──────────────────────────────────────────────────────
+
+def test_tool_retry_count(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step() as step:
+            t = step.tool("db_query")
+            t.__enter__()
+            t.fail(retry_count=3)
+            t.__exit__(None, None, None)
+
+    tool_span = next(s for s in exp.get_finished_spans() if s.name == "tool:db_query")
+    assert tool_span.attributes["routeiq.tool.retry_count"] == 3
+
+
+def test_tool_token_split(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step() as step:
+            t = step.tool("llm")
+            t.__enter__()
+            t.success(tokens_in=100, tokens_out=200)
+            t.__exit__(None, None, None)
+
+    tool_span = next(s for s in exp.get_finished_spans() if s.name == "tool:llm")
+    assert tool_span.attributes["routeiq.tool.tokens_in"] == 100
+    assert tool_span.attributes["routeiq.tool.tokens_out"] == 200
+
+
+def test_same_tool_count_emitted(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        for _ in range(4):
+            with task.step() as step:
+                with step.tool("search"):
+                    pass
+
+    task_span = next(s for s in exp.get_finished_spans() if s.name.startswith("task:"))
+    assert task_span.attributes["routeiq.same_tool_count"] == 4
+
+
+def test_same_tool_count_not_emitted_for_distinct_tools(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step() as step:
+            with step.tool("search"):
+                pass
+        with task.step() as step:
+            with step.tool("write"):
+                pass
+
+    task_span = next(s for s in exp.get_finished_spans() if s.name.startswith("task:"))
+    assert "routeiq.same_tool_count" not in task_span.attributes
+
+
+def test_escalation_span(riq):
+    client, exp = riq
+    with client.task(intent="refund") as task:
+        task.escalate(reason="amount_too_large", target="human_review")
+
+    esc_span = next(s for s in exp.get_finished_spans() if s.name.startswith("escalation:"))
+    assert esc_span.attributes["routeiq.escalation.triggered"] == "true"
+    assert esc_span.attributes["routeiq.escalation.reason"] == "amount_too_large"
+    assert esc_span.attributes["routeiq.escalation.target"] == "human_review"
+
+
+def test_guardrail_span(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step() as step:
+            step.guardrail("pii_filter", blocked=True)
+
+    g_span = next(s for s in exp.get_finished_spans() if s.name.startswith("guardrail:"))
+    assert g_span.attributes["routeiq.guardrail.type"] == "pii_filter"
+    assert g_span.attributes["routeiq.guardrail.blocked"] == "true"
+
+
+def test_replan_attributes(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step(action="search") as step:
+            step.replan("search_failed_switching_to_cache")
+
+    step_span = next(s for s in exp.get_finished_spans() if s.name.startswith("step:"))
+    assert step_span.attributes["routeiq.replan.triggered"] == "true"
+    assert step_span.attributes["routeiq.replan.reason"] == "search_failed_switching_to_cache"
+
+
+def test_system_id_and_user_id_in_envelope(riq):
+    client, exp = riq
+    client.system_id = "checkout-bot"
+    client.user_id = "user_42"
+    with client.task(intent="q"):
+        pass
+
+    task_span = next(s for s in exp.get_finished_spans() if s.name.startswith("task:"))
+    assert task_span.attributes["routeiq.system.id"] == "checkout-bot"
+    assert task_span.attributes["routeiq.user.id"] == "user_42"
+
+
+def test_slo_targets_in_envelope(riq):
+    client, exp = riq
+    client.slo_success_target = 0.95
+    client.slo_p95_ms_target = 2000.0
+    with client.task(intent="q"):
+        pass
+
+    task_span = next(s for s in exp.get_finished_spans() if s.name.startswith("task:"))
+    assert task_span.attributes["routeiq.slo.success_target"] == 0.95
+    assert task_span.attributes["routeiq.slo.p95_ms_target"] == 2000.0
+
+
+def test_step_model_override(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        with task.step(model="claude-opus-4-5"):
+            pass
+
+    step_span = next(s for s in exp.get_finished_spans() if s.name.startswith("step:"))
+    assert step_span.attributes["routeiq.step.model"] == "claude-opus-4-5"
+
+
+def test_task_token_split_auto_sums(riq):
+    client, exp = riq
+    with client.task(intent="q") as task:
+        task.complete(tokens_in=300, tokens_out=700)
+
+    task_span = next(s for s in exp.get_finished_spans() if s.name.startswith("task:"))
+    assert task_span.attributes["routeiq.task.tokens_in"] == 300
+    assert task_span.attributes["routeiq.task.tokens_out"] == 700
+    assert task_span.attributes["routeiq.task.total_tokens"] == 1000
