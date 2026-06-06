@@ -146,7 +146,7 @@ jobs:
       - name: Build and publish to GitHub Packages
         if: matrix.lang == 'typescript'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.SDK_PUSH_TOKEN }}
         run: |
           cd /tmp/sdk
           npm ci
