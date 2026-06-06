@@ -4,6 +4,7 @@ name: release-sdks
 # Pushes each generated out/<lang>/ tree to its dedicated public SDK repo.
 # Requires secret: SDK_PUSH_TOKEN — a GitHub PAT (classic) with repo scope
 # on SSForge/routeiq-sdk-{go,python,typescript,ruby,rust,csharp,java}.
+# Requires secret: NPM_TOKEN — npm access token for publishing routeiq-sdk.
 
 on:
   workflow_run:
@@ -129,3 +130,28 @@ jobs:
           cd /tmp/sdk
           git tag "$RELEASE_TAG" 2>/dev/null || echo "Tag $RELEASE_TAG already exists, skipping."
           git push "https://x-access-token:${PUSH_TOKEN}@github.com/${SDK_REPO}.git" "$RELEASE_TAG" || true
+
+      - name: Publish to npm
+        if: >
+          matrix.lang == 'typescript' && (
+            (github.event_name == 'workflow_dispatch' && inputs.tag != '') ||
+            startsWith(github.ref, 'refs/tags/v')
+          )
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build and publish
+        if: >
+          matrix.lang == 'typescript' && (
+            (github.event_name == 'workflow_dispatch' && inputs.tag != '') ||
+            startsWith(github.ref, 'refs/tags/v')
+          )
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd /tmp/sdk
+          npm ci
+          npm run build
+          npm publish --access public
