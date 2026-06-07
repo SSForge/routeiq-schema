@@ -194,4 +194,4 @@ jobs:
           git commit -m "chore: bump @ssforge/routeiq-sdk vendor to ${VERSION}"
           git push \
             "https://x-access-token:${FORGE_TOKEN}@github.com/SSForge/forge-app.git" \
-            main
+            HEAD
