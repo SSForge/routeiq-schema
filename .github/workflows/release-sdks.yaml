@@ -152,3 +152,46 @@ jobs:
           npm ci
           npm run build
           npm publish
+
+      - name: Update forge-app vendor tarball
+        if: matrix.lang == 'typescript'
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_APP_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('/tmp/sdk/package.json').version")
+          TARBALL="ssforge-routeiq-sdk-${VERSION}.tgz"
+
+          # Pack from the already-built SDK
+          cd /tmp/sdk && npm pack --pack-destination /tmp/
+
+          # Clone forge-app
+          git clone \
+            "https://x-access-token:${FORGE_TOKEN}@github.com/SSForge/forge-app.git" \
+            /tmp/forge-app
+
+          # Swap vendor tarball
+          rm -f /tmp/forge-app/shared/vendor/ssforge-routeiq-sdk-*.tgz
+          cp "/tmp/${TARBALL}" /tmp/forge-app/shared/vendor/
+
+          # Update shared/package.json to reference the new tarball path
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('/tmp/forge-app/shared/package.json'));
+            pkg.dependencies['@ssforge/routeiq-sdk'] = 'file:./vendor/${TARBALL}';
+            fs.writeFileSync('/tmp/forge-app/shared/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          # Regenerate lock file
+          cd /tmp/forge-app/shared && npm install
+
+          # Commit and push
+          cd /tmp/forge-app
+          git add shared/vendor/ shared/package.json shared/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No changes — vendor already up to date."
+            exit 0
+          fi
+          git commit -m "chore: bump @ssforge/routeiq-sdk vendor to ${VERSION}"
+          git push \
+            "https://x-access-token:${FORGE_TOKEN}@github.com/SSForge/forge-app.git" \
+            main
