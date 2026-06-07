@@ -156,7 +156,7 @@ jobs:
       - name: Update forge-app vendor tarball
         if: matrix.lang == 'typescript'
         env:
-          FORGE_TOKEN: ${{ secrets.FORGE_APP_TOKEN }}
+          FORGE_TOKEN: ${{ secrets.SDK_PUSH_TOKEN }}
         run: |
           VERSION=$(node -p "require('/tmp/sdk/package.json').version")
           TARBALL="ssforge-routeiq-sdk-${VERSION}.tgz"
